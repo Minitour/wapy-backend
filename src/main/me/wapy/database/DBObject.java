@@ -1,0 +1,288 @@
+package me.wapy.database;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.util.*;
+
+/**
+ * Created By Tony on 12/02/2018
+ */
+public class DBObject{
+
+    /**
+     * A hash map which holds a list of foreign keys. This map will be populated with values only when calling the
+     * @code {DBObject(Map<String,Object> map)} Constructor.
+     */
+    final transient private Map<String,Object> foreignKeys = new HashMap<>();
+
+    /**
+     * Default Constructor
+     */
+    protected DBObject(){ }
+
+    /**
+     * Constructor from map object.
+     *
+     * @param map The map which contains the values.
+     */
+    protected DBObject(Map<String, Object> map){
+        this.map(map);
+    }
+
+    public void map(Map<String,Object> map){
+        Set<Field> fields = findFields(AutoLink.class);
+        fields.forEach(field -> {
+            try {
+                field.setAccessible(true);
+                AutoLink an = getAnnotationFromField(field);
+                if(an != null) {
+                    String name = an.NAME();
+                    String columnName;
+
+                    if (name.equals("AUTO"))
+                        columnName = field.getName();
+                    else
+                        columnName = name;
+
+                    if(an.FK()){
+                        //if foreign key init object
+                        field.set(this,initObjectWithValues(field,an.MAP(),map));
+                    }else{
+                        field.set(this, map.get(columnName));
+                    }
+
+
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }catch (IllegalArgumentException e){
+                //field is a foreign key!
+                foreignKeys.put(field.getName(),map.get(field.getName()));
+            }
+        });
+    }
+
+    /**
+     * Helper method which returns a list of fields that are annotated with a certain annotation.
+     * @param ann
+     * @return
+     */
+    private Set<Field> findFields(Class<? extends Annotation> ann) {
+        Set<Field> set = new HashSet<>();
+        Class<?> c = getClass();
+        while (c != null) {
+            for (Field field : c.getDeclaredFields()) {
+                if (field.isAnnotationPresent(ann)) {
+                    set.add(field);
+                }
+            }
+            c = c.getSuperclass();
+        }
+        return set;
+    }
+
+    public String db_table() {
+        return "Tbl" + getClass().getSimpleName() + "s";
+    }
+
+    /**
+     * @return The db columns
+     */
+    public Column[] db_columns(){
+        return getColumns();
+    }
+
+    private Column[] getColumns(){
+
+        //get all fields with AutoLink annotation.
+        Set<Field> fields = findFields(AutoLink.class);
+        Set<Column> columns = new HashSet<>();
+
+        for (Field field : fields) {
+            //get annotation value
+            AutoLink an = getAnnotationFromField(field);
+            if (an != null) {
+
+                //get the column name (the field name in the db table)
+                String name = an.NAME();
+
+                //check if foreign key.
+                boolean fk = an.FK();
+
+                //check if value is auto-generated
+                boolean auto = an.AUTO();
+
+                boolean pk = an.PK();
+
+                //column name holder
+                String columnName;
+
+                //if name is auto (field name is the same as in the database)
+                if (name.equals("AUTO"))
+                    columnName = field.getName();
+                else
+                    columnName = name;
+
+                //if foreign key
+                if (fk) {
+                    //get mapper if foreign key.
+                    String[] mapper = an.MAP();
+
+                    try {
+                        //make field accessible
+                        if(!field.isAccessible())
+                            field.setAccessible(true);
+
+                        //read value
+                        Object o = field.get(this);
+
+                        //check if instance of DBObject
+                        if(o instanceof DBObject){
+
+                            //cast
+                            DBObject dbo = (DBObject) o;
+
+                            //get columns from db object mapped as foreign keys
+                            columns.addAll(Arrays.asList(dbo.getPrimaryKeysMappedAsForeignKeys(mapper)));
+                        }
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    try {
+                        field.setAccessible(true);
+                        columns.add(new Column(columnName, field.get(this))
+                                .setPrimaryKey(pk)
+                                .setAutoGenerated(auto)
+                                .setJavaType(field.getType().getSimpleName()));
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+
+        return columns.toArray(new Column[0]);
+    }
+
+    /**
+     * Get the primary keys of this DBObject mapped as foreign keys.
+     * @param map The fields you wish to map.
+     * @return The columns as foreign keys.
+     */
+    private Column[] getPrimaryKeysMappedAsForeignKeys(String[] map){
+        Column[] columns = new Column[map.length];
+        Map<String,String> hmap = autoLinkMapperConverter(map);
+
+        Field[] fields = findFields(AutoLink.class).toArray(new Field[0]);
+
+        for (int i = 0,arc = 0; i < fields.length; i++) {
+            Field field = fields[i];
+            AutoLink an = getAnnotationFromField(field);
+
+            if(an != null && an.PK()) {
+                String name = an.NAME();
+                String columnName;
+
+                if (name.equals("AUTO"))
+                    columnName = field.getName();
+                else
+                    columnName = name;
+
+                try {
+                    field.setAccessible(true);
+                    columns[arc] = new Column(hmap.get(columnName),field.get(this))
+                            .setForeignKey(true)
+                            .setJavaType(field.getType().getSimpleName());
+                } catch (IllegalAccessException e) {
+                    columns[arc] = new Column(hmap.get(columnName),null)
+                            .setForeignKey(true)
+                            .setJavaType(field.getType().getSimpleName());
+                }finally {
+                    ++arc;
+                }
+            }
+        }
+        return columns;
+    }
+
+    /**
+     * Get annotation auto-link from certain field.
+     * @param field The field of which to extract the annotation.
+     * @return The annotation if found else null.
+     */
+    private static AutoLink getAnnotationFromField(Field field){
+        Annotation annotation = field.getAnnotation(AutoLink.class);
+        return annotation != null ? (AutoLink) annotation : null;
+    }
+
+    /**
+     * Converts a array of strings from the autolink annotation to a hashmap.
+     * @param map an array that contains strings in the format @code{"key1 : value1"}
+     * @return A @code{Map<String,String>} equivalent of the given map.
+     */
+    private static Map<String,String> autoLinkMapperConverter(String[] map){
+        return autoLinkMapperConverter(map,true);
+    }
+
+    /**
+     * Converts an array of strings from the auto link MAP annotation with option to reverse key to value.
+     * @param map an array that contains strings in the format @code{"key1 : value1"}
+     * @param pkToFk if true, the value would be "pk:fk" else "fk:pk"
+     * @return A @code{Map<String,String>} equivalent of the given map.
+     */
+    private static Map<String,String> autoLinkMapperConverter(String[] map,boolean pkToFk){
+        Map<String,String> hmap = new HashMap<>();
+        for (String s : map){
+            String[] splited = s.replace(" ","").split(":");
+            String primaryKey = splited[0];
+            String foreignKey = splited[1];
+
+            if(pkToFk)
+                hmap.put(primaryKey,foreignKey);
+            else
+                hmap.put(foreignKey,primaryKey);
+        }
+        return hmap;
+    }
+
+    /**
+     * This method is used to create a new instance of an object based on the given fields and populates it based on the map and values.
+     *
+     * @param field The field that was annotated with FK.
+     * @param map The map which specifies which fields in the new instance will be mapped to from which values in the given hashmap.
+     * @param values HashMap which contains the values that will be used to populate the instance.
+     * @return a new instance of the given field type populated with the values based on the map.
+     */
+    private static Object initObjectWithValues(Field field,String[] map,Map<String,Object> values){
+
+        Map<String,String> foreignKeysToPrimaryKeys = autoLinkMapperConverter(map,false);
+        Map<String,Object> mappedValues = new HashMap<>();
+
+        for(String fk : foreignKeysToPrimaryKeys.keySet()){
+            Object value = values.get(fk);
+            mappedValues.put(foreignKeysToPrimaryKeys.get(fk),value);
+        }
+
+        Class s = field.getType();
+        try {
+            Object o = s.newInstance();
+            Class<?> c = o.getClass();
+            while (c != null) {
+                for (Field f : c.getDeclaredFields()) {
+                    String fn = f.getName();
+                    if(mappedValues.containsKey(fn)){
+                        f.setAccessible(true);
+                        f.set(o,mappedValues.get(fn));
+                    }
+
+                }
+                c = c.getSuperclass();
+            }
+            return o;
+        } catch (InstantiationException | IllegalAccessException ignored) {
+            return null;
+        }
+    }
+
+}
