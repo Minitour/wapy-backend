@@ -1,0 +1,13 @@
+{
+  "permissions" : {
+    "me" : {
+      "wapy" : {
+        "permission_namespace_1" : [
+          "action_1",
+          "action_2",
+          "action_3"
+        ]
+      }
+    }
+  }
+}

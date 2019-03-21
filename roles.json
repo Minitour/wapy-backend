@@ -1,0 +1,23 @@
+{
+  "groups": [
+    {
+      "groupId": 1,
+      "groupName": "guest",
+      "permissions": [
+        "me.wapy.permission_namespace_1.action_1",
+        "me.wapy.permission_namespace_1.action_2"
+      ]
+    },
+    {
+      "groupId": 2,
+      "groupName": "regular",
+      "permissions": [
+        "me.wapy.permission_namespace_1.action_3"
+       ],
+      "extends": [
+        1
+      ]
+    }
+  ],
+  "ranks": []
+}

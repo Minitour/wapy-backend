@@ -22,17 +22,6 @@ public class AuthContext {
     @Expose
     public final String session_token;
 
-
-    /** user permissions based on 2 parameters: rank(dynamically changed every day/hour/sec)
-     * and type_user (Hoodini Team, Municipality, Regular, Guest)
-     * first check should be the type_user and then the rank.
-     *
-     * Guest user has not any permission.
-     * Regular user has permissions based on his rank
-     * Municipality user has permissions based on price plane (not on rank)
-     * Hoodini Team has all permissions
-     * */
-
     @Expose
     private int user_id_rank = -1;
 

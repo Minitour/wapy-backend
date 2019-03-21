@@ -1,0 +1,21 @@
+{
+  "port" : 8080,
+  "twilio_sid" : "",
+  "twilio_token" : "",
+  "aws_access_key_id" : "",
+  "aws_secret_access_key" : "",
+  "aws_bucket_region" : "",
+  "aws_bucket_name" : "",
+  "user" : {
+    "max_allowed_sessions" : 3,
+    "session_time_out" : -1
+  },
+  "db" : {
+    "url" : "",
+    "driver" : "",
+    "username" : "",
+    "password" : "",
+    "database_name" : "",
+    "should_strangle" : true
+  }
+}

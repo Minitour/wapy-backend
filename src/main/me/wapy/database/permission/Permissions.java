@@ -6,7 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
-import io.nbrs.database.AuthContext;
+import me.wapy.database.AuthContext;
 
 import java.io.IOException;
 import java.lang.reflect.Type;

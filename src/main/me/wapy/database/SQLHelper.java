@@ -1,7 +1,5 @@
 package me.wapy.database;
 
-import me.wapy.database.sql.Where;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
