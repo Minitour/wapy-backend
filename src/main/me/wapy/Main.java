@@ -1,7 +1,14 @@
 package me.wapy;
 
+import me.wapy.controllers.DashboardController;
 import me.wapy.database.Database;
 import me.wapy.database.data_access.DashboardAccess;
+import me.wapy.utils.JSONTransformer;
+import me.wapy.utils.RESTRoute;
+
+
+import static spark.Spark.port;
+import static spark.Spark.post;
 
 /**
  * Created by Antonio Zaitoun on 21/03/2019.
@@ -17,12 +24,12 @@ public class Main {
         Database.init();
 
         //TODO: add controllers
+        port(8080);
+        make("/dashboard", new DashboardController());
+    }
 
-        try(DashboardAccess db = new DashboardAccess()) {
-            System.out.println(db.getTraffic("1"));
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
+    public static void make(String route, RESTRoute controller) {
+        post(route, "application/json", controller, new JSONTransformer());
     }
 
     private static void checkEnv(){
