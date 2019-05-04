@@ -32,6 +32,8 @@ public class AuthContext {
     @Expose
     private Set<String> permissions;
 
+    private String user_firebase_token;
+
     public AuthContext(long user_id, String session_token) {
         this.user_id = user_id;
         this.session_token = session_token;
@@ -51,9 +53,14 @@ public class AuthContext {
         this.user_type = user_type;
     }
 
-    void validate(int rank,int type_user){
+    public String getFirebaseToken() {
+        return user_firebase_token;
+    }
+
+    void validate(int rank, int type_user, String user_firebase_token){
         this.user_id_rank = rank;
         this.user_type = type_user;
+        this.user_firebase_token = user_firebase_token;
         initPermissions();
     }
 

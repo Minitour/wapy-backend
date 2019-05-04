@@ -9,6 +9,7 @@ import me.wapy.database.exception.MissingPermissionsException;
 import me.wapy.database.permission.Permissions;
 import me.wapy.utils.Config;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URI;
@@ -23,9 +24,29 @@ import java.util.Map;
 public abstract class Database implements AutoCloseable{
 
 
-    private static final boolean SHOULD_HANG = Config.main.get("db").getAsJsonObject().get("should_strangle").getAsBoolean();
+    /**
+     * Indicates if the database should strangle the thread.
+     * If true the server will not start until a connection pool is established.
+     */
+    private static final boolean SHOULD_HANG = Config
+            .main
+            .get("db").getAsJsonObject()
+            .get("should_strangle").getAsBoolean();
+
+    /**
+     * The primary data source for receiving connections.
+     */
     private static HikariDataSource ds;
+
+    /**
+     * This is an internal private flag which indicates if the data source is injected or not. False by default.
+     */
     private static boolean $is_injected = false;
+
+    /**
+     * $protect is a private internal flag meant to prevent the injection of data sources after the creation of the first instance.
+     * Once an instance of Database is created this value will always be true.
+     */
     private static boolean $protect = false;
 
     public static void init() {}
@@ -36,15 +57,20 @@ public abstract class Database implements AutoCloseable{
      */
     public static void $test_inject_data_source(HikariDataSource ds) {
 
+        // Injection can happen before creating a new instance.
         if($protect){
             System.err.println("CANNOT INJECT CONNECTION. CONNECTION ALREADY CREATED!");
             return;
         }
 
+        // close data source if exists.
         if (Database.ds != null && !Database.ds.isClosed())
             Database.ds.close();
 
+        // apply injection.
         Database.ds = ds;
+
+        // flag as injected.
         $is_injected = true;
     }
 
@@ -62,6 +88,15 @@ public abstract class Database implements AutoCloseable{
     static {
 
         HikariConfig config = new HikariConfig("db.properties");
+
+        String username = System.getenv("WAPY_JDBC_USERNAME");
+        String password = System.getenv("WAPY_JDBC_PASSWORD");
+        String jdbcUrl = System.getenv("WAPY_JDBC_URL");
+
+        config.setPassword(password);
+        config.setUsername(username);
+        config.setJdbcUrl(jdbcUrl);
+
         config.addDataSourceProperty("characterEncoding","utf8");
         config.addDataSourceProperty("useUnicode","true");
 
@@ -87,39 +122,74 @@ public abstract class Database implements AutoCloseable{
 
     }
 
-    private Connection connection;
+    protected ConnectionBox connection;
+
     protected final SQLHelper sql;
 
+    /**
+     * Convenience constructor.
+     */
     protected Database() {
-        $protect = true;
-        initConnection();
-        sql = new SQLHelper(connection)
-                .$_test_mode($is_injected);
-
+        this(null);
     }
 
 
+    /**
+     * Create a Data Access Object.
+     * @param database Existing database object.
+     */
     protected Database(Database database) {
+        this(database,false);
+    }
+
+    private boolean isWeak = false;
+
+    protected Database(Database database, boolean isWeak) {
+        // set $protect to true to lock connection injection.
         $protect = true;
-        if (database == null)
+        this.isWeak = isWeak;
+
+        // if database object is null create a new connection
+        if (database == null) {
             initConnection();
-        else
+        }
+        // else use existing connection
+        else {
+            // make connection point to the existing connection.
             connection = database.connection;
 
-        sql = new SQLHelper(connection)
+            // retain connection reference count.
+            if (!isWeak)
+                connection.retain();
+        }
+
+
+        sql = new SQLHelper(connection.getConnection())
                 .$_test_mode($is_injected);
     }
 
 
+    /**
+     * Create a new connection object.
+     */
     private void initConnection(){
         try {
-            connection = ds.getConnection();//DriverManager.getConnection(URL, username, password);
+            // Create a new connection box using a connection fetched from the data source.
+            connection = new ConnectionBox(ds.getConnection());
+            System.out.println("Connection Created " + getClass().getSimpleName());
         } catch (SQLException e) {
             connection = null;
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
     }
 
+    /**
+     * Check if a server is up.
+     * @param url Thr url.
+     * @param port The port.
+     *
+     * @return true if the server was pinged false otherwise.
+     */
     private static boolean isServerUp(String url, Integer port) {
         boolean isUp = false;
         try {
@@ -137,15 +207,20 @@ public abstract class Database implements AutoCloseable{
 
     @Override
     public void close() throws Exception {
-        if(!connection.isClosed())
-            connection.close();
+        // decrease connection reference count by 1
+        if(!isWeak) {
+            connection.release();
+        }
+
+        // attempt to close the connection (if reference count is not 0 connection will not be closed).
+        connection.close();
     }
 
     /****************************************       Permission Issue    ******************************/
 
 
     protected void isContextValidFor(AuthContext context,String permission) throws DataAccessException {
-        validateContext(context);
+        validateContextIfNeeded(context);
         boolean result = Permissions.hasPermissionFor(permission, context);
 
         if(!result)
@@ -154,25 +229,32 @@ public abstract class Database implements AutoCloseable{
 
 
     /**
-     * This method checks if the given context is valid and returns the user_id_rank and user_type for that given context.
-     * In other words, this method validates the session and then returns the rank_id and user_type of the user.
-     * @param context The auth context.
-     * @return user_type and user_id_rank COMBINED of a given context or -1 if invalid.
-     * in the order of user_type first and then user_id_rank
+     * This method runs multiple queries and validates if the combination of a User ID and a Session token is valid.
+     * In the case the session token or the user were not found an exception will be thrown.
      *
-     *              for example: user_type = 1 AND user_id_rank = 3
-     *                     the method will return 13
+     * The way this method works is by receiving an "Unvalidated" AuthContext object and calling the validate method on them.
+     *
+     * This method is the ONLY method that shall call the `AuthContext::validate` method.
+     * In the case the context has already been validate this method will automatically return.
+     *
+     * @param context The authentication context which contains a user_id and a session_token.
+     * @throws AuthException In the case a token is not valid.
      */
-    protected void validateContext(AuthContext context) throws AuthException{
+    protected void validateContextIfNeeded(AuthContext context) throws AuthException{
+        // if context is already valid, return and avoid redundant queries.
+        if(context.isValid())
+            return;
 
         try {
-            List<Map<String,Object>> checkSession = sql.get("SELECT `user_id`, `session_token` " +
-                    "FROM `tbl_session` " +
-                    "WHERE `user_id` = ? AND `session_token` = ?",
+            // find session
+            List<Map<String,Object>> checkSession = sql.get("SELECT `user_id`, `session_token`, `user_firebase_token`" +
+                            "FROM `tbl_session` " +
+                            "WHERE `user_id` = ? AND `session_token` = ?",
                     context.user_id, context.session_token);
 
             try {
 
+                // find user roles
                 List<Map<String,Object>> data = sql.get(
                         "SELECT `user_type`, `user_id_rank` "+
                                 "FROM `tbl_user` "+
@@ -180,11 +262,13 @@ public abstract class Database implements AutoCloseable{
                         checkSession.get(0).get("user_id"));
 
 
+                // extract rank, role and FCM token.
                 Integer rank =  data.size() == 0 ? -1 : (Integer) data.get(0).get("user_id_rank");
                 Integer user_type =  data.size() == 0 ? -1 : (Integer) data.get(0).get("user_type");
+                String optionalToken = checkSession.get(0).containsKey("user_firebase_token") ? (String) checkSession.get(0).get("user_firebase_token") : null;
 
-
-                context.validate(rank, user_type);
+                // validate context.
+                context.validate(rank, user_type, optionalToken);
 
             } catch (SQLException e) {
                 throw new AuthException("Invalid Context B");
@@ -223,6 +307,80 @@ public abstract class Database implements AutoCloseable{
 
         } catch (SQLException e) {
             throw new AuthException("Invalid Context Business");
+        }
+    }
+
+    /**
+     * This class is used to encapsulate the connection object that is created and is shared among Database Access Objects.
+     * This class will "automatically" manage the reference count of the connection using the methods `retain` and `release`.
+     */
+    protected static class ConnectionBox implements Closeable {
+
+        private static int auto_id = 0;
+        final int connectionId = ++auto_id;
+
+        /**
+         * The reference count. Indicates the number of references currently accessing this connection.
+         */
+        private int reference_count;
+
+        /**
+         * Indicates if the object was released or not.
+         */
+        private boolean isReleased = false;
+
+        /**
+         * The JDBC connection.
+         */
+        final private Connection connection;
+
+        /**
+         * Creates a connection box with reference count set to 1.
+         * @param connection The connection object.
+         */
+        ConnectionBox(Connection connection) {
+            this.connection = connection;
+            this.reference_count = 1;
+            System.out.println("[Connection] Connection ID:" + connectionId);
+        }
+
+        /**
+         * Increment the reference count by 1. Call this function when the connection is passed to share.
+         */
+        void retain(){
+            this.reference_count += 1;
+            System.out.println("[Connection] Retained Connection ID:" + connectionId);
+        }
+
+        /**
+         * Decrement the reference count by 1. Call this when the connection is no longer used by the Access Object.
+         * For example in the `close`.
+         */
+        void release() {
+            this.reference_count -= 1;
+            System.out.println("[Connection] Released Connection ID:" + connectionId);
+        }
+
+        /**
+         * @return returns the connection if not already closed. else null.
+         */
+        public Connection getConnection() {
+            if(!isReleased)
+                return connection;
+            return null;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if(this.reference_count <= 0) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                isReleased = true;
+                System.out.println("[Connection] Freed Connection ID:" + connectionId);
+            }
         }
     }
 
