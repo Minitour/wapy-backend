@@ -15,3 +15,10 @@ public class DashboardController implements RESTRoute {
     }
 
 }
+
+
+//        try(DashboardAccess db = new DashboardAccess()) {
+//            System.out.println(db.getTraffic("1", "1233", "1235"));
+//        }catch (Exception e) {
+//            e.printStackTrace();
+//        }

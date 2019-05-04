@@ -53,6 +53,20 @@ public class DashboardAccessTest {
             System.out.println(val.getObject_id());
     }
 
+    @Test
+    public void getLeastViewedProductReaction() throws Exception {
+        Product val = db.getLeastViewedProductReaction("1", start, end);
+        if (val != null)
+            System.out.println(val.getObject_id());
+    }
+
+    @Test
+    public void getExposure() throws Exception {
+        Product val = db.getExposure("1", start, end);
+        if (val != null)
+            System.out.println(val.getObject_id());
+    }
+
     @After
     public void tearDown() throws Exception {
         db.close();
