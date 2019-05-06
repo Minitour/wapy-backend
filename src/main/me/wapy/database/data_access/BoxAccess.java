@@ -1,5 +1,6 @@
 package me.wapy.database.data_access;
 
+import me.wapy.database.AuthContext;
 import me.wapy.database.Database;
 import me.wapy.model.Product;
 import me.wapy.model.Reaction;
@@ -32,10 +33,10 @@ public class BoxAccess extends Database {
      * @param toTime
      * @return
      */
-    public List<Product> getAllProductsInWindow(String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public List<Product> getAllProductsInWindow(AuthContext context, String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
 
         try(DashboardAccess access = new DashboardAccess(this)) {
-            List<Product> products = access.getAllProductInWindow(cameraId, fromTime, toTime);
+            List<Product> products = access.getAllProductInWindow(context, cameraId, fromTime, toTime);
             return products;
 
         }catch (Exception e) {
@@ -52,7 +53,7 @@ public class BoxAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Product getMostViewedProductInWindow(String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getMostViewedProductInWindow(AuthContext context, String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
@@ -88,7 +89,7 @@ public class BoxAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Product getLeastViewedProductInWindow(String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getLeastViewedProductInWindow(AuthContext context, String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
@@ -125,7 +126,7 @@ public class BoxAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Reaction> getAllReactionsPerProductPerBox(String objectId, String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public List<Reaction> getAllReactionsPerProductPerBox(AuthContext context, String objectId, String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         String[] emotions = {"calm", "happy", "confused", "disgusted", "angry", "sad"};
         List<Reaction> allReactions = new ArrayList<>();
 

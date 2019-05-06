@@ -33,7 +33,7 @@ public class ProductAccessTest {
     @Test
     public void getAllReactionsPerProduct() throws Exception {
         String objectId = "1";
-        List<Reaction> reactions = db.getAllReactionsPerProduct(objectId, start, end);
+        List<Reaction> reactions = db.getAllReactionsPerProduct(null, objectId, start, end);
         for (Reaction reaction : reactions) {
             System.out.println(String.format("reaction: %s, value: %s", reaction.getReaction(), String.valueOf(reaction.getValue())));
         }
@@ -42,21 +42,21 @@ public class ProductAccessTest {
     @Test
     public void getTotalViewsPerProduct() throws Exception {
         String objectId = "1";
-        Long val = db.getTotalViewsPerProduct(objectId, start, end);
+        Long val = db.getTotalViewsPerProduct(null, objectId, start, end);
         System.out.println(val);
     }
 
     @Test
     public void getTotalLikesPerProduct() throws Exception {
         String objectId = "2";
-        Long val = db.getTotalLikesPerProduct(objectId, start, end);
+        Long val = db.getTotalLikesPerProduct(null, objectId, start, end);
         System.out.println(val);
     }
 
     @Test
     public void getAllProductInWindow() throws Exception {
         String cameraId = "1";
-        List<Product> val = db.getAllProductInWindow(cameraId, start, end);
+        List<Product> val = db.getAllProductInWindow(null, cameraId, start, end);
         for (Product product : val) {
             System.out.println(String.format("product: %s", product.getObject_id()));
         }

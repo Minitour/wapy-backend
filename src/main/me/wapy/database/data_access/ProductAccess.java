@@ -1,5 +1,6 @@
 package me.wapy.database.data_access;
 
+import me.wapy.database.AuthContext;
 import me.wapy.database.Database;
 import me.wapy.model.Product;
 import me.wapy.model.Reaction;
@@ -35,7 +36,7 @@ public class ProductAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Reaction> getAllReactionsPerProduct(String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException{
+    public List<Reaction> getAllReactionsPerProduct(AuthContext context, String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException{
         String[] emotions = {"calm", "happy", "confused", "disgusted", "angry", "sad"};
         List<Reaction> allReactions = new ArrayList<>();
 
@@ -83,7 +84,7 @@ public class ProductAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Long getTotalViewsPerProduct(String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Long getTotalViewsPerProduct(AuthContext context, String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
 
         String query = "SELECT count(*) as value FROM objects_table \n" +
                 "WHERE\n" +
@@ -116,7 +117,7 @@ public class ProductAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Long getTotalLikesPerProduct(String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Long getTotalLikesPerProduct(AuthContext context, String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         List<String> emotions = new ArrayList<>();
         emotions.add("calm");
         emotions.add("happy");
@@ -126,12 +127,12 @@ public class ProductAccess extends Database {
         try(DashboardAccess access = new DashboardAccess(this)) {
 
             // checking if the person is smiling
-            Long c = access.getSmilesForProduct(fromTime, toTime, objectId);
+            Long c = access.getSmilesForProduct(context, fromTime, toTime, objectId);
             if (c > 0)
                 counter += c;
 
             // getting all reactions for object
-            List<Reaction> reactions = access.getReactionsPerProduct(objectId, fromTime, toTime);
+            List<Reaction> reactions = access.getReactionsPerProduct(context, objectId, fromTime, toTime);
 
             // checking if one of the reactions are in the friendly zone
             for (Reaction reaction : reactions) {
@@ -148,9 +149,9 @@ public class ProductAccess extends Database {
     }
 
 
-    public List<Product> getAllProductInWindow(String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public List<Product> getAllProductInWindow(AuthContext context, String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         try(DashboardAccess access = new DashboardAccess(this)) {
-            return access.getAllProductInWindow(cameraId, fromTime, toTime);
+            return access.getAllProductInWindow(context, cameraId, fromTime, toTime);
         } catch (Exception e) {
             e.printStackTrace();
         }
