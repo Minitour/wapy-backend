@@ -150,6 +150,6 @@ public class ProductAccess extends Database {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+        return new ArrayList<Product>();
     }
 }
