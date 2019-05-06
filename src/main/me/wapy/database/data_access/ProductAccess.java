@@ -39,31 +39,35 @@ public class ProductAccess extends Database {
         String[] emotions = {"calm", "happy", "confused", "disgusted", "angry", "sad"};
         List<Reaction> allReactions = new ArrayList<>();
 
+        String query = "select count(object_id) as value, " + String.join(",", emotions) + " from images_table\n" +
+                "where timestamp between ? and ? AND ";
+
         for (String emotion : emotions) {
-            String query = "select count(object_id) as value, " + emotion + " as reaction from images_table\n" +
-                    "where timestamp between ? and ?\n" +
-                    "AND " + emotion + " >= 50.0 AND object_id=?";
+            query += emotion + " >= 50.0 AND ";
+        }
 
-            // getting the results for the query
-            List<Map<String, Object>> res = sql.get(
-                    query,
-                    fromTime, toTime, objectId
-            );
+        query += "object_id=?";
 
-            // checking for validation of result
-            if (res.isEmpty()) {
-                continue;
-            }
+        // getting the results for the query
+        List<Map<String, Object>> res = sql.get(
+                query,
+                fromTime, toTime, objectId
+        );
 
-            if (debug) {
-                System.out.println(res);
-            }
+        // checking for validation of result
+        if (res.isEmpty()) {
+            return new ArrayList<>();
+        }
 
-            Float value = (Float)res.get(0).get("reaction");
-            // construct the reaction map object
+        if (debug) {
+            System.out.println(res);
+        }
+
+        System.out.println(res);
+
+        for (String emotion : emotions) {
+            Float value = (Float)res.get(0).get("value");
             Reaction reaction = new Reaction(emotion, value.longValue());
-
-            // add the reaction to the list
             allReactions.add(reaction);
         }
 

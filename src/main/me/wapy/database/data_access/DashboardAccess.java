@@ -88,7 +88,7 @@ public class DashboardAccess extends Database {
         );
 
         if (res.isEmpty())
-            return null;
+            return new Product();
 
         if (debug)
             System.out.println(res);
@@ -124,7 +124,7 @@ public class DashboardAccess extends Database {
         );
 
         if (res.isEmpty())
-            return null;
+            return new Product();
 
         if (debug)
             System.out.println(res);
@@ -161,7 +161,7 @@ public class DashboardAccess extends Database {
         );
 
         if (res.isEmpty())
-            return null;
+            return new Product();
 
         if (debug)
             System.out.println(res);
@@ -197,7 +197,7 @@ public class DashboardAccess extends Database {
         );
 
         if (res.isEmpty())
-            return null;
+            return new Product();
 
         if (debug)
             System.out.println(res);
@@ -229,7 +229,7 @@ public class DashboardAccess extends Database {
         );
 
         if (res.isEmpty())
-            return null;
+            return 0L;
 
         if (debug)
             System.out.println(res);
@@ -256,7 +256,7 @@ public class DashboardAccess extends Database {
         );
 
         if (res.isEmpty())
-            return null;
+            return 0L;
 
         if (debug)
             System.out.println(res);

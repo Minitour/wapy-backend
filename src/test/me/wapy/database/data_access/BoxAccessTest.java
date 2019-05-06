@@ -2,6 +2,7 @@ package me.wapy.database.data_access;
 
 import me.wapy.database.Database;
 import me.wapy.model.Product;
+import me.wapy.model.Reaction;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,6 +50,16 @@ public class BoxAccessTest {
         String camera_id = "1";
         Product product = access.getLeastViewedProductInWindow(camera_id, start, end);
         System.out.println(product.getObject_id());
+    }
+
+    @Test
+    public void getAllReactionsPerProductPerBox() throws Exception {
+        String camera_id = "1";
+        String object_id = "1";
+        List<Reaction> reactions = access.getAllReactionsPerProductPerBox(object_id, camera_id, start, end);
+        for (Reaction reaction : reactions) {
+            System.out.println(String.format("reaction: %s, value: %s", reaction.getReaction(), reaction.getValue()));
+        }
     }
 
 }
