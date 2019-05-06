@@ -14,7 +14,10 @@ public class Reaction extends DBObject {
     private Long value;
 
 
-    public Reaction() {}
+    public Reaction(String reaction, Long value) {
+        this.reaction = reaction;
+        this.value = value;
+    }
 
     public Reaction(Map<String, Object> map) {
         super(map);
