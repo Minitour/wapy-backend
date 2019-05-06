@@ -44,4 +44,6 @@ public class Product extends DBObject{
     public Timestamp getTimestamp() {
         return timestamp;
     }
+
+    public Long getValue() {return value;}
 }
