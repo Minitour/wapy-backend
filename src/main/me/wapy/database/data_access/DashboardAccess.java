@@ -2,9 +2,13 @@ package me.wapy.database.data_access;
 
 import me.wapy.database.Database;
 import me.wapy.model.Product;
+import me.wapy.model.Reaction;
 
+import javax.print.DocFlavor;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -60,20 +64,25 @@ public class DashboardAccess extends Database {
      * @param storeId
      * @param fromTime start time for views
      * @param toTime end time for views
+     *
+     *               {
+     *                 "object_id" : "",
+     *                  "value": 0
+     *               }
      * @return string value of the most viewed product
      * @throws SQLException
      */
-    public Map<String, Integer> getMostViewedProduct(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getMostViewedProduct(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
 
         if (fromTime.after(toTime))
             return null;
 
-        String query = "SELECT count(object_id) as most_viewed, object_id \n" +
+        String query = "SELECT count(object_id) as value, object_id \n" +
                 "FROM objects_table \n" +
                 "WHERE store_id=? AND timestamp BETWEEN ? and ?\n" +
                 "GROUP BY object_id\n" +
                 "ORDER BY most_viewed DESC\n" +
-                "LIMIT 4";
+                "LIMIT 1";
 
         List<Map<String, Object>> res = sql.get(
                 query,
@@ -86,8 +95,7 @@ public class DashboardAccess extends Database {
         if (debug)
             System.out.println(res);
 
-        Map<String, Integer> product = null;
-        product.put((String) res.get(0).get("object_id"), (Integer)res.get(0).get("most_viewed"));
+        Product product = new Product(res.get(0));
 
         return product;
     }
@@ -101,17 +109,17 @@ public class DashboardAccess extends Database {
      * @return string value of the most viewed product
      * @throws SQLException
      */
-    public Map<String, Integer> getLeastViewedProduct(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getLeastViewedProduct(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
 
         if (fromTime.after(toTime))
             return null;
 
-        String query = "SELECT count(object_id) as least_viewed, object_id \n" +
+        String query = "SELECT count(object_id) as value, object_id \n" +
                 "FROM objects_table \n" +
                 "WHERE store_id=? AND timestamp BETWEEN ? and ?\n" +
                 "GROUP BY object_id\n" +
                 "ORDER BY least_viewed ASC\n" +
-                "LIMIT 4";
+                "LIMIT 1";
 
         List<Map<String, Object>> res = sql.get(
                 query,
@@ -124,8 +132,7 @@ public class DashboardAccess extends Database {
         if (debug)
             System.out.println(res);
 
-        Map<String, Integer> product = null;
-        product.put((String) res.get(0).get("object_id"), (Integer)res.get(0).get("least_viewed"));
+        Product product = new Product(res.get(0));
 
         return product;
 
@@ -139,12 +146,12 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Map<String, Integer> getMostViewedProductReaction(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getMostViewedProductReaction(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
 
-        String query = "SELECT count(object_id) as most_viewed, \n" +
+        String query = "SELECT count(object_id) as value, \n" +
                 "object_id FROM images_table\n" +
                 "where store_id=? AND\n" +
                 "timestamp BETWEEN ? and ?\n" +
@@ -163,8 +170,7 @@ public class DashboardAccess extends Database {
         if (debug)
             System.out.println(res);
 
-        Map<String, Integer> product = null;
-        product.put((String) res.get(0).get("object_id"), (Integer)res.get(0).get("most_viewed"));
+        Product product = new Product(res.get(0));
 
         return product;
     }
@@ -177,12 +183,12 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Map<String, Integer> getLeastViewedProductReaction(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getLeastViewedProductReaction(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
 
-        String query = "SELECT count(object_id) as least_viewed, \n" +
+        String query = "SELECT count(object_id) as value, \n" +
                 "object_id, FROM images_table\n" +
                 "where store_id=? AND\n" +
                 "timestamp BETWEEN ? and ?\n" +
@@ -201,8 +207,7 @@ public class DashboardAccess extends Database {
         if (debug)
             System.out.println(res);
 
-        Map<String, Integer> product = null;
-        product.put((String) res.get(0).get("object_id"), (Integer)res.get(0).get("least_viewed"));
+        Product product = new Product(res.get(0));
 
         return product;
 
@@ -275,14 +280,14 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Map<String, Integer>> getReactions(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
-        List<Map<String, Integer>> reactions = null;
+    public List<Reaction> getReactions(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+        List<Reaction> reactions = new ArrayList<>();
 
         String[] emotions = {"calm", "happy", "confused", "disgusted", "angry", "sad"};
 
         for (String emotion : emotions) {
             // construct the query
-            String query = "select count(object_id) as value from images_table\n" +
+            String query = "select count(object_id) as value, "+ emotion + " as reaction from images_table\n" +
                     "where store_id=? and timestamp between ? and ?\n" +
                     "AND " + emotion +" >= 50.0";
 
@@ -292,22 +297,15 @@ public class DashboardAccess extends Database {
                     storeId, fromTime, toTime
             );
 
-            Map<String,Integer> e = null;
             if (!res.isEmpty()) {
-                // get the value for the emotion
-                String r = String.valueOf(res.get(0).get("value"));
 
-                // construct the pair
-                e.put(emotion, Integer.valueOf(r));
+                // construct the reaction object
+                Reaction reaction = new Reaction(res.get(0));
 
-            } else {
+                // add reaction to the list
+                reactions.add(reaction);
 
-                // insert 0 for the emotion
-                e.put(emotion, 0);
             }
-
-            // add to the reactions
-            reactions.add(e);
         }
 
         return reactions;
@@ -321,8 +319,8 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Map<String, Integer>> getAllProductInWindow(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
-        List<Map<String, Integer>> products = null;
+    public List<Product> getAllProductInWindow(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+        List<Product> products = new ArrayList<>() ;
         String query = "SELECT object_id , count(object_id) as value FROM objects_table \n" +
                 "WHERE store_id = ? AND\n" +
                 "timestamp BETWEEN ? and ?\n" +
@@ -338,16 +336,10 @@ public class DashboardAccess extends Database {
         if (!res.isEmpty()) {
             for (Map<String, Object> re : res) {
 
-                // getting the values and objects id
-                String object_id = String.valueOf(re.get("object_id"));
-                Integer value = Integer.valueOf(String.valueOf(re.get("value")));
+                Product product = new Product(re);
 
-                // construct the Map of object id and the number of views
-                Map<String,Integer> e = null;
-                e.put(object_id, value);
+                products.add(product);
 
-                // add to the list of products
-                products.add(e);
             }
         }
 

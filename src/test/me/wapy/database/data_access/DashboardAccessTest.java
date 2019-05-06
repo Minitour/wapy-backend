@@ -62,9 +62,9 @@ public class DashboardAccessTest {
 
     @Test
     public void getExposure() throws Exception {
-        Product val = db.getExposure("1", start, end);
+        Integer val = db.getExposure("1", start, end);
         if (val != null)
-            System.out.println(val.getObject_id());
+            System.out.println(val);
     }
 
     @After

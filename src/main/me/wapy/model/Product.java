@@ -20,6 +20,9 @@ public class Product extends DBObject{
     @AutoLink
     Timestamp timestamp;
 
+    @AutoLink
+    Long value;
+
     public Product() {}
 
     public Product(Map<String, Object> map) {
