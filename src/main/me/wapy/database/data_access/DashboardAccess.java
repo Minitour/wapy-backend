@@ -63,7 +63,7 @@ public class DashboardAccess extends Database {
      * @return string value of the most viewed product
      * @throws SQLException
      */
-    public Product getMostViewedProduct(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Map<String, Integer> getMostViewedProduct(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
 
         if (fromTime.after(toTime))
             return null;
@@ -75,7 +75,21 @@ public class DashboardAccess extends Database {
                 "ORDER BY most_viewed DESC\n" +
                 "LIMIT 4";
 
-        return getQueryData(storeId, fromTime, toTime, query);
+        List<Map<String, Object>> res = sql.get(
+                query,
+                storeId, fromTime, toTime
+        );
+
+        if (res.isEmpty())
+            return null;
+
+        if (debug)
+            System.out.println(res);
+
+        Map<String, Integer> product = null;
+        product.put((String) res.get(0).get("object_id"), (Integer)res.get(0).get("most_viewed"));
+
+        return product;
     }
 
 
@@ -87,7 +101,7 @@ public class DashboardAccess extends Database {
      * @return string value of the most viewed product
      * @throws SQLException
      */
-    public Product getLeastViewedProduct(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Map<String, Integer> getLeastViewedProduct(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
 
         if (fromTime.after(toTime))
             return null;
@@ -99,7 +113,22 @@ public class DashboardAccess extends Database {
                 "ORDER BY least_viewed ASC\n" +
                 "LIMIT 4";
 
-        return getQueryData(storeId, fromTime, toTime, query);
+        List<Map<String, Object>> res = sql.get(
+                query,
+                storeId, fromTime, toTime
+        );
+
+        if (res.isEmpty())
+            return null;
+
+        if (debug)
+            System.out.println(res);
+
+        Map<String, Integer> product = null;
+        product.put((String) res.get(0).get("object_id"), (Integer)res.get(0).get("least_viewed"));
+
+        return product;
+
     }
 
     /**
@@ -110,7 +139,7 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Product getMostViewedProductReaction(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Map<String, Integer> getMostViewedProductReaction(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
@@ -123,8 +152,21 @@ public class DashboardAccess extends Database {
                 "ORDER BY most_viewed DESC\n" +
                 "LIMIT 1";
 
-        return getQueryData(storeId, fromTime, toTime, query);
+        List<Map<String, Object>> res = sql.get(
+                query,
+                storeId, fromTime, toTime
+        );
 
+        if (res.isEmpty())
+            return null;
+
+        if (debug)
+            System.out.println(res);
+
+        Map<String, Integer> product = null;
+        product.put((String) res.get(0).get("object_id"), (Integer)res.get(0).get("most_viewed"));
+
+        return product;
     }
 
     /**
@@ -135,20 +177,35 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Product getLeastViewedProductReaction(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Map<String, Integer> getLeastViewedProductReaction(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
 
         String query = "SELECT count(object_id) as least_viewed, \n" +
-                "object_id FROM images_table\n" +
+                "object_id, FROM images_table\n" +
                 "where store_id=? AND\n" +
                 "timestamp BETWEEN ? and ?\n" +
                 "GROUP BY object_id\n" +
                 "ORDER BY least_viewed ASC\n" +
                 "LIMIT 1";
 
-        return getQueryData(storeId, fromTime, toTime, query);
+        List<Map<String, Object>> res = sql.get(
+                query,
+                storeId, fromTime, toTime
+        );
+
+        if (res.isEmpty())
+            return null;
+
+        if (debug)
+            System.out.println(res);
+
+        Map<String, Integer> product = null;
+        product.put((String) res.get(0).get("object_id"), (Integer)res.get(0).get("least_viewed"));
+
+        return product;
+
 
     }
 
@@ -160,14 +217,25 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Product getExposure(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Integer getExposure(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
         String query = "SELECT count(object_id) as views FROM objects_table\n" +
                 "WHERE store_id=? AND timestamp BETWEEN ? and ?";
 
-        return getQueryData(storeId, fromTime, toTime, query);
+        List<Map<String, Object>> res = sql.get(
+                query,
+                storeId, fromTime, toTime
+        );
+
+        if (res.isEmpty())
+            return null;
+
+        if (debug)
+            System.out.println(res);
+
+        return (Integer) res.get(0).get("views");
     }
 
     /**
@@ -180,7 +248,7 @@ public class DashboardAccess extends Database {
      * @throws SQLException
      */
     public Integer getSmilesForProduct(String storeId, Timestamp fromTime, Timestamp toTime, String object_id) throws SQLException {
-        String query = "select count(smile) as value, object_id, store_id from images_table\n" +
+        String query = "select count(smile) as value from images_table\n" +
                 "where store_id=? and object_id = ? and timestamp between ? and ?\n" +
                 "AND smile=1";
 
@@ -245,6 +313,14 @@ public class DashboardAccess extends Database {
         return reactions;
     }
 
+    /**
+     * Returns all product monitored in window
+     * @param storeId
+     * @param fromTime
+     * @param toTime
+     * @return
+     * @throws SQLException
+     */
     public List<Map<String, Integer>> getAllProductInWindow(String storeId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         List<Map<String, Integer>> products = null;
         String query = "SELECT object_id , count(object_id) as value FROM objects_table \n" +
@@ -277,30 +353,6 @@ public class DashboardAccess extends Database {
 
         return products;
 
-    }
-
-    /**
-     * Return the String value of the object id for specific query
-     * @param storeId
-     * @param fromTime
-     * @param toTimer
-     * @param query
-     * @return
-     * @throws SQLException
-     */
-    private Product getQueryData(String storeId, Timestamp fromTime, Timestamp toTimer, String query) throws SQLException {
-        List<Map<String, Object>> res = sql.get(
-                query,
-                storeId, fromTime, toTimer
-        );
-
-        if (res.isEmpty())
-            return null;
-
-        if (debug)
-            System.out.println(res);
-
-        return new Product(res.get(0));
     }
 
 
