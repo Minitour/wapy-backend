@@ -14,6 +14,8 @@ import spark.Response;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class DashboardController implements RESTRoute {
 
@@ -232,26 +234,37 @@ public class DashboardController implements RESTRoute {
             }
              */
             // ---------------------------------------------------------------//
-            JsonObject productReactionsDict = new JsonObject();
 
-            for (Product product : productsList) {
-                // getting the reactions for specific product
-                List<Reaction> reactionList = access.getReactionsPerProduct(camera_id, product.getObject_id(), fromTime, toTime);
+            // getting all reactions for all products
+            List<Map<String,List<Reaction>>> productsReactionsList = access.getReactionsPerProduct(camera_id, fromTime, toTime);
 
-                JsonObject jsonObject1 = new JsonObject();
+            // json with products and the reactions corresponding to the product
+            JsonObject jsonProductReactions = new JsonObject();
 
-                for (Reaction reaction : reactionList) {
-                    // construct the reaction as json and append to the list for the product
-                    jsonObject1.addProperty(reaction.getReaction(), reaction.getValue());
+            for (Map<String, List<Reaction>> stringListMap : productsReactionsList) {
+
+                // getting the name of the product
+                Set productName = stringListMap.keySet();
+
+                // getting the reactions
+                List<Reaction> reactionsForProduct = stringListMap.get(productName.toString());
+
+                // convert the reactions to json object
+                JsonObject jsonReactions = new JsonObject();
+                for (Reaction reaction : reactionsForProduct) {
+                    jsonReactions.addProperty(reaction.getReaction(), reaction.getValue());
                 }
 
-                // adding the list for product to the list
-                productReactionsDict.add(product.getObject_id(), jsonObject1);
+                // adding the json with product and list of reactions as json
+                jsonProductReactions.add(productName.toString(), jsonReactions);
+
             }
 
             // adding the reactions to the json response
-            jsonBuilder.add("products_reactions", productReactionsDict);
+            jsonBuilder.add("products_reactions", jsonProductReactions);
 
+
+            // adding the json builder for final json object that contains the dashboard data
             JsonObject jsonResponse = new JsonObject();
             jsonResponse.add("dashboard", jsonBuilder);
 
@@ -305,7 +318,7 @@ public class DashboardController implements RESTRoute {
                         "product_id_2" : ""
 
                     },
-                    "products_reactions": {
+                    "products_reactions": [
                         "product_id_1": {
                                 "sad": "value",
                                 "angry": "value"
@@ -314,7 +327,7 @@ public class DashboardController implements RESTRoute {
                                 "sad": "value",
                                 "angry": "value"
                          }
-                     }
+                     ]
                 }
              */
 

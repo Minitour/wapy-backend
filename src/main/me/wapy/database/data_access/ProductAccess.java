@@ -82,10 +82,10 @@ public class ProductAccess extends Database {
         if (c > 0)
             counter += c;
 
-        try(DashboardAccess access = new DashboardAccess(this)) {
+        try(BoxAccess access = new BoxAccess(this)) {
 
             // getting all reactions for object
-            List<Reaction> reactions = access.getReactionsPerProduct(cameraId, objectId, fromTime, toTime);
+            List<Reaction> reactions = access.getAllReactionsPerProductPerBox(objectId, cameraId, fromTime, toTime);
 
             // checking if one of the reactions are in the friendly zone
             for (Reaction reaction : reactions) {

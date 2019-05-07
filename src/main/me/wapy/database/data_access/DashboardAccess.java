@@ -242,7 +242,6 @@ public class DashboardAccess extends Database {
      * Returns the number of smiles for specific object for given store and time interval
      * @param fromTime
      * @param toTime
-     * @param object_id
      * @return
      * @throws SQLException
      */
@@ -273,16 +272,33 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Reaction> getReactionsPerProduct(String cameraId, String object_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
-        List<Reaction> reactions = new ArrayList<>();
+    public List<Map<String,List<Reaction>>> getReactionsPerProduct(String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+        List<Map<String,List<Reaction>>> productsReactions = new ArrayList<>();
+
+        List<Product> productList = getAllProductInWindow(cameraId, fromTime, toTime);
+
+        if (productList.isEmpty())
+            return productsReactions;
 
         try(BoxAccess access = new BoxAccess(this)) {
-            reactions = access.getAllReactionsPerProductPerBox(object_id, cameraId, fromTime, toTime);
+            Map<String, List<Reaction>> productReaction = new HashMap<>();
+            for (Product product : productList) {
+
+                // getting all reactions for product
+                List<Reaction> reactions = access.getAllReactionsPerProductPerBox(product.getObject_id(), cameraId, fromTime, toTime);
+
+                // construct a hashmap
+                productReaction.put(product.getObject_id(), reactions);
+
+                // add to the list of product with reactions
+                productsReactions.add(productReaction);
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return reactions;
+        return productsReactions;
     }
 
     /**

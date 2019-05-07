@@ -69,17 +69,6 @@ public class ProductController implements RESTRoute {
 
 
         try(ProductAccess access = new ProductAccess()) {
-            List<Product> productList;
-
-            // try to get the product list in window
-            try(DashboardAccess dAccess = new DashboardAccess(access)) {
-                productList = dAccess.getAllProductInWindow(camera_id, fromTime, toTime);
-            }
-
-            // return Fail in case there are no products in window
-            if (productList.isEmpty())
-                return JSONResponse.FAILURE().message("No products in window");
-
             // ---------------------------------------------------------------//
             //  get all views per product
             // ---------------------------------------------------------------//
@@ -114,7 +103,8 @@ public class ProductController implements RESTRoute {
         response will look like this:
             "object_id_1": {
                 "views": "value",
-                "likes": "value"
+                "likes": "value",
+                "smiles": "value"
             }
         */
     }
