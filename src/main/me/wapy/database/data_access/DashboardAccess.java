@@ -39,7 +39,7 @@ public class DashboardAccess extends Database {
      * @return long value of the traffic
      * @throws SQLException
      */
-    public Long getTraffic(AuthContext context, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Long getTraffic(Timestamp fromTime, Timestamp toTime) throws SQLException {
 
         if (fromTime.after(toTime))
             return 0L;
@@ -71,7 +71,7 @@ public class DashboardAccess extends Database {
      * @return string value of the most viewed product
      * @throws SQLException
      */
-    public Product getMostViewedProduct(AuthContext context, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getMostViewedProduct(Timestamp fromTime, Timestamp toTime) throws SQLException {
 
         if (fromTime.after(toTime))
             return null;
@@ -89,7 +89,7 @@ public class DashboardAccess extends Database {
         );
 
         if (res.isEmpty())
-            return new Product();
+            return null;
 
         if (debug)
             System.out.println(res);
@@ -107,7 +107,7 @@ public class DashboardAccess extends Database {
      * @return string value of the most viewed product
      * @throws SQLException
      */
-    public Product getLeastViewedProduct(AuthContext context, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getLeastViewedProduct(Timestamp fromTime, Timestamp toTime) throws SQLException {
 
         if (fromTime.after(toTime))
             return null;
@@ -125,7 +125,7 @@ public class DashboardAccess extends Database {
         );
 
         if (res.isEmpty())
-            return new Product();
+            return null;
 
         if (debug)
             System.out.println(res);
@@ -143,7 +143,7 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Product getMostViewedProductReaction(AuthContext context, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getMostViewedProductReaction(Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
@@ -162,7 +162,7 @@ public class DashboardAccess extends Database {
         );
 
         if (res.isEmpty())
-            return new Product();
+            return null;
 
         if (debug)
             System.out.println(res);
@@ -179,7 +179,7 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Product getLeastViewedProductReaction(AuthContext context, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getLeastViewedProductReaction(Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
@@ -198,7 +198,7 @@ public class DashboardAccess extends Database {
         );
 
         if (res.isEmpty())
-            return new Product();
+            return null;
 
         if (debug)
             System.out.println(res);
@@ -217,7 +217,7 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Long getExposure(AuthContext context, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Long getExposure(Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
@@ -246,7 +246,7 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Long getSmilesForProduct(AuthContext context, Timestamp fromTime, Timestamp toTime, String object_id) throws SQLException {
+    public Long getSmilesForProduct(Timestamp fromTime, Timestamp toTime, String object_id) throws SQLException {
         String query = "select count(smile) as value from images_table\n" +
                 "where object_id = ? and timestamp between ? and ?\n" +
                 "AND smile=1";
@@ -272,7 +272,7 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Reaction> getReactionsPerProduct(AuthContext context, String object_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public List<Reaction> getReactionsPerProduct(String object_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
         List<Reaction> reactions = new ArrayList<>();
 
         String[] emotions = {"calm", "happy", "confused", "disgusted", "angry", "sad"};
@@ -311,7 +311,7 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Product> getAllProductInWindow(AuthContext context, String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public List<Product> getAllProductInWindow(String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         List<Product> products = new ArrayList<>() ;
         String query = "SELECT object_id FROM objects_table \n" +
                 "WHERE camera_id=? and\n" +
