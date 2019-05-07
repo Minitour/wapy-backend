@@ -1,6 +1,6 @@
 package me.wapy;
 
-import me.wapy.controllers.TrafficController;
+import me.wapy.controllers.DashboardController;
 import me.wapy.database.Database;
 import me.wapy.utils.JSONTransformer;
 import me.wapy.utils.RESTRoute;
@@ -24,7 +24,7 @@ public class Main {
 
         //TODO: add controllers
         port(8080);
-        make("/dashboard", new TrafficController());
+        make("/dashboard", new DashboardController());
     }
 
     public static void make(String route, RESTRoute controller) {

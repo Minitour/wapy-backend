@@ -246,14 +246,14 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Long getSmilesForProduct(Timestamp fromTime, Timestamp toTime, String object_id) throws SQLException {
+    public Long getSmilesForProduct(Timestamp fromTime, Timestamp toTime, String object_id, String camera_id) throws SQLException {
         String query = "select count(smile) as value from images_table\n" +
                 "where object_id = ? and timestamp between ? and ?\n" +
-                "AND smile=1";
+                "AND smile=1 AND camera_id=?";
 
         List<Map<String, Object>> res = sql.get(
                 query,
-                object_id, fromTime, toTime
+                object_id, fromTime, toTime, camera_id
         );
 
         if (res.isEmpty())
@@ -272,7 +272,7 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Reaction> getReactionsPerProduct(String object_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public List<Reaction> getReactionsPerProduct(String cameraId, String object_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
         List<Reaction> reactions = new ArrayList<>();
 
         String[] emotions = {"calm", "happy", "confused", "disgusted", "angry", "sad"};
@@ -281,12 +281,12 @@ public class DashboardAccess extends Database {
             // construct the query
             String query = "select " + emotion + " as reaction, count(object_id) as value from images_table\n" +
                     "where timestamp between ? and ?\n" +
-                    "AND " + emotion +" >= 50.0 AND object_id=?";
+                    "AND " + emotion +" >= 50.0 AND object_id=? AND camera_id=?";
 
             // get all records for the query
             List<Map<String, Object>> res = sql.get(
                     query,
-                    fromTime, toTime, object_id
+                    fromTime, toTime, object_id, cameraId
             );
 
             if (!res.isEmpty()) {

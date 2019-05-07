@@ -1,0 +1,343 @@
+package me.wapy.controllers;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import me.wapy.database.data_access.DashboardAccess;
+import me.wapy.model.Product;
+import me.wapy.model.Reaction;
+import me.wapy.utils.JSONResponse;
+import me.wapy.utils.RESTRoute;
+import spark.Request;
+import spark.Response;
+
+import java.sql.Timestamp;
+import java.util.List;
+
+public class DashboardController implements RESTRoute {
+
+    private static final Gson gson = new Gson();
+
+    @Override
+    public Object handle(Request request, Response response, JsonObject body) throws Exception {
+
+        /*
+        body structure:
+        {
+            "camera_id" : "1",
+            "fromTime": "2019-04-12 12:34:12",
+            "toTime": "2019-04-12 12:45:12"
+        }
+
+        ## this is the minimal info we need to send the controller results
+
+        ## from the camera_id we will get all the product in window ->
+                can give us the smiles for product
+                and
+                can give us the reactions for product
+         */
+
+        // get the response as json object for extraction
+        JsonObject jsonObject = gson.fromJson(body, JsonObject.class);
+
+        // get the camera id
+        String camera_id = jsonObject.get("camera_id").getAsString();
+
+        // get the from timestamp
+        String fromTimeString = jsonObject.get("fromTime").getAsString();
+        Timestamp fromTime = Timestamp.valueOf(fromTimeString);
+
+        // get the to timestamp
+        String toTimeString = jsonObject.get("toTime").getAsString();
+        Timestamp toTime = Timestamp.valueOf(toTimeString);
+
+        JsonObject jsonResponse = new JsonObject();
+
+        try(DashboardAccess access = new DashboardAccess()) {
+
+            // ---------------------------------------------------------------//
+            //  traffic
+            // ---------------------------------------------------------------//
+
+            // getting the traffic
+            Long counter = access.getTraffic(fromTime, toTime);
+
+            // adding the traffic number to the json response
+            // will get 0 or above - no nulls
+            jsonResponse.addProperty("traffic", counter);
+
+
+            // ---------------------------------------------------------------//
+            //  most viewed product
+            // ---------------------------------------------------------------//
+
+            //getting the most viewed product (according to the objects_table)
+            Product most_viewed_product = access.getMostViewedProduct(fromTime, toTime);
+
+            if (most_viewed_product != null) {
+                // parsing the product for the json response
+                JsonObject jsonProduct = getProductAsJson(most_viewed_product);
+
+                // append to the json response
+                jsonResponse.add("most_viewed_product", jsonProduct);
+            }
+
+            // ---------------------------------------------------------------//
+            //  least viewed product
+            // ---------------------------------------------------------------//
+
+            // getting the least viewed product (according to objects_table)
+            Product least_viewed_product = access.getLeastViewedProduct(fromTime, toTime);
+
+            // product can be null -> will not add to the json response
+            if (least_viewed_product != null) {
+                // parsing the product for the json response
+                JsonObject jsonProduct = getProductAsJson(least_viewed_product);
+
+                // append to the json response
+                jsonResponse.add("least_viewed_product", jsonProduct);
+            }
+
+            // ---------------------------------------------------------------//
+            //  most viewed product reaction
+            // ---------------------------------------------------------------//
+
+            // getting the most viewed product (according to images_table)
+            Product most_viewed_reaction_product = access.getMostViewedProductReaction(fromTime, toTime);
+
+            // product can be null -> will not add to the json response
+            if (most_viewed_reaction_product != null) {
+                // parsing the product for the json response
+                JsonObject jsonProduct = getProductAsJson(most_viewed_reaction_product);
+
+                // append to the json response
+                jsonResponse.add("most_viewed_reaction_product", jsonProduct);
+            }
+
+            // ---------------------------------------------------------------//
+            //  least viewed product reaction
+            // ---------------------------------------------------------------//
+
+            // getting the least viewed product (according to images_table)
+            Product least_viewed_reaction_product = access.getLeastViewedProductReaction(fromTime, toTime);
+
+            if (least_viewed_reaction_product != null) {
+                // parsing the product for the json response
+                JsonObject jsonProduct = getProductAsJson(least_viewed_reaction_product);
+
+                // append to the json response
+                jsonResponse.add("least_viewed_reaction_product", jsonProduct);
+            }
+
+
+            // ---------------------------------------------------------------//
+            //  exposure
+            // ---------------------------------------------------------------//
+            Long exposure = access.getExposure(fromTime, toTime);
+
+            // adding the exposure to the json response
+            // will get 0 and above -> no nulls
+            jsonResponse.addProperty("exposure", exposure);
+
+
+            // ---------------------------------------------------------------//
+            // all products in window
+            /*
+            {
+                "products": [
+                    {
+                        "camera_id" : "",
+                        "object_id" : "",
+                        "store_id" : "",
+                        "timestamp" : "",
+                        "value" : "",
+                    }
+                ]
+            }
+             */
+            // we are getting the products for window and will use later also
+            // ---------------------------------------------------------------//
+            List<Product> productsList = access.getAllProductInWindow(camera_id, fromTime, toTime);
+
+            // checking we have a list to append
+            if (!productsList.isEmpty()) {
+
+                // construct an array of products as json array -> will append as property: products
+                JsonArray jsonProducts = new JsonArray();
+                for (Product product : productsList) {
+                    jsonProducts.add(getProductAsJson(product));
+                }
+
+                jsonResponse.add("products_in_window", jsonProducts);
+            }
+
+
+            // ---------------------------------------------------------------//
+            // we will return the json we collected so far if we dont have a product list
+            // the next functions are dependent that there are objects in the product list
+            // ---------------------------------------------------------------//
+            if (productsList.isEmpty()) {
+                return JSONResponse.FAILURE().data(jsonResponse);
+            }
+
+
+            // ---------------------------------------------------------------//
+            // smiles per product
+            /*
+            {
+                "smiles_per_product": {
+                    "product_id_1" : "",
+                    "product_id_2" : ""
+
+                }
+            }
+             */
+            // assumption: if got here we have product list not empty
+            // ---------------------------------------------------------------//
+            JsonObject smilePerProduct = new JsonObject();
+
+            for (Product product : productsList) {
+                // getting the info from the product
+                String product_id = product.getObject_id();
+
+                // getting the smiles for the product
+                Long smilesForProduct = access.getSmilesForProduct(fromTime, toTime, product_id, camera_id);
+
+                smilePerProduct.addProperty(product_id, smilesForProduct);
+            }
+
+            // adding the smiles to the json response
+            jsonResponse.add("smiles_per_product", smilePerProduct);
+
+
+            // ---------------------------------------------------------------//
+            // reactions per product
+            /*
+            {
+                "products_reactions": {
+                    "product_id_1": {
+                            "sad": "value",
+                            "angry": "value"
+                     },
+                     "product_id_2": {
+                            "sad": "value",
+                            "angry": "value"
+                     }
+                 }
+
+            }
+             */
+            // ---------------------------------------------------------------//
+            JsonObject productReactionsDict = new JsonObject();
+
+            for (Product product : productsList) {
+                // getting the reactions for specific product
+                List<Reaction> reactionList = access.getReactionsPerProduct(camera_id, product.getObject_id(), fromTime, toTime);
+
+                JsonObject jsonObject1 = new JsonObject();
+
+                for (Reaction reaction : reactionList) {
+                    // construct the reaction as json and append to the list for the product
+                    jsonObject1.addProperty(reaction.getReaction(), reaction.getValue());
+                }
+
+                // adding the list for product to the list
+                productReactionsDict.add(product.getObject_id(), jsonObject1);
+            }
+
+            // adding the reactions to the json response
+            jsonResponse.add("products_reactions", productReactionsDict);
+
+            // return the json response with all the dashboard data we need
+            return JSONResponse.SUCCESS().message(String.valueOf(jsonResponse));
+
+            /*
+            response will be like this:
+            {
+                "traffic": "",
+                "most_viewed_product": {
+                    "camera_id" : "",
+                    "object_id" : "",
+                    "store_id" : "",
+                    "timestamp" : "",
+                    "value" : "",
+                },
+                "least_viewed_product": {
+                    "camera_id" : "",
+                    "object_id" : "",
+                    "store_id" : "",
+                    "timestamp" : "",
+                    "value" : "",
+                },
+                "most_viewed_reaction_product": {
+                    "camera_id" : "",
+                    "object_id" : "",
+                    "store_id" : "",
+                    "timestamp" : "",
+                    "value" : "",
+                },
+                 "least_viewed_reaction_product": {
+                    "camera_id" : "",
+                    "object_id" : "",
+                    "store_id" : "",
+                    "timestamp" : "",
+                    "value" : "",
+                },
+                "exposure": "value",
+                "products_in_window": [
+                    {
+                        "camera_id" : "",
+                        "object_id" : "",
+                        "store_id" : "",
+                        "timestamp" : "",
+                        "value" : "",
+                    }
+                ],
+                "smiles_per_product": {
+                    "product_id_1" : "",
+                    "product_id_2" : ""
+
+                },
+                "products_reactions": {
+                    "product_id_1": {
+                            "sad": "value",
+                            "angry": "value"
+                     },
+                     "product_id_2": {
+                            "sad": "value",
+                            "angry": "value"
+                     }
+                 }
+            }
+             */
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return JSONResponse.FAILURE().message("No Traffic");
+
+
+    }
+
+    private JsonObject getProductAsJson(Product product) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("camera_id", product.getCamera_id());
+        jsonObject.addProperty("object_id", product.getObject_id());
+        jsonObject.addProperty("store_id", product.getStore_id());
+        jsonObject.addProperty("timestamp", product.getTimestamp().toString());
+        jsonObject.addProperty("value", product.getValue());
+        return jsonObject;
+
+        /*
+        {
+            "camera_id" : "",
+            "object_id" : "",
+            "store_id" : "",
+            "timestamp" : "",
+            "value" : "",
+        }
+         */
+    }
+
+}
+

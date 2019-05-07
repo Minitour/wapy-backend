@@ -36,7 +36,7 @@ public class ProductAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Reaction> getAllReactionsPerProduct(String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException{
+    public List<Reaction> getAllReactionsPerProduct(String cameraId, String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException{
         String[] emotions = {"calm", "happy", "confused", "disgusted", "angry", "sad"};
         List<Reaction> allReactions = new ArrayList<>();
 
@@ -47,12 +47,12 @@ public class ProductAccess extends Database {
             query += emotion + " >= 50.0 AND ";
         }
 
-        query += "object_id=?";
+        query += "object_id=? AND camera_id=?";
 
         // getting the results for the query
         List<Map<String, Object>> res = sql.get(
                 query,
-                fromTime, toTime, objectId
+                fromTime, toTime, objectId, cameraId
         );
 
         // checking for validation of result
@@ -67,8 +67,8 @@ public class ProductAccess extends Database {
         System.out.println(res);
 
         for (String emotion : emotions) {
-            Float value = (Float)res.get(0).get("value");
-            Reaction reaction = new Reaction(emotion, value.longValue());
+            Long value = (Long)res.get(0).get("value");
+            Reaction reaction = new Reaction(emotion, value);
             allReactions.add(reaction);
         }
 
@@ -84,16 +84,16 @@ public class ProductAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Long getTotalViewsPerProduct(String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Long getTotalViewsPerProduct(String cameraId, String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
 
         String query = "SELECT count(*) as value FROM objects_table \n" +
                 "WHERE\n" +
-                "timestamp BETWEEN ? and ? AND object_id =?";
+                "timestamp BETWEEN ? and ? AND object_id =? AND camera_id=?";
 
         // getting the results for the query
         List<Map<String, Object>> res = sql.get(
                 query,
-                fromTime, toTime, objectId
+                fromTime, toTime, objectId, cameraId
         );
 
         // checking for validation of result
@@ -117,7 +117,7 @@ public class ProductAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Long getTotalLikesPerProduct(String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Long getTotalLikesPerProduct(String cameraId, String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         List<String> emotions = new ArrayList<>();
         emotions.add("calm");
         emotions.add("happy");
@@ -127,12 +127,12 @@ public class ProductAccess extends Database {
         try(DashboardAccess access = new DashboardAccess(this)) {
 
             // checking if the person is smiling
-            Long c = access.getSmilesForProduct(fromTime, toTime, objectId);
+            Long c = access.getSmilesForProduct(fromTime, toTime, objectId, cameraId);
             if (c > 0)
                 counter += c;
 
             // getting all reactions for object
-            List<Reaction> reactions = access.getReactionsPerProduct(objectId, fromTime, toTime);
+            List<Reaction> reactions = access.getReactionsPerProduct(cameraId, objectId, fromTime, toTime);
 
             // checking if one of the reactions are in the friendly zone
             for (Reaction reaction : reactions) {
