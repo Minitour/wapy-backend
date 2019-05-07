@@ -28,53 +28,6 @@ public class ProductAccess extends Database {
         super(database);
     }
 
-    /**
-     * Returns all reactions for specific product given store_id, object_id and time interval
-     * @param objectId
-     * @param fromTime
-     * @param toTime
-     * @return
-     * @throws SQLException
-     */
-    public List<Reaction> getAllReactionsPerProduct(String cameraId, String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException{
-        String[] emotions = {"calm", "happy", "confused", "disgusted", "angry", "sad"};
-        List<Reaction> allReactions = new ArrayList<>();
-
-        String query = "select count(object_id) as value, " + String.join(",", emotions) + " from images_table\n" +
-                "where timestamp between ? and ? AND ";
-
-        for (String emotion : emotions) {
-            query += emotion + " >= 50.0 AND ";
-        }
-
-        query += "object_id=? AND camera_id=?";
-
-        // getting the results for the query
-        List<Map<String, Object>> res = sql.get(
-                query,
-                fromTime, toTime, objectId, cameraId
-        );
-
-        // checking for validation of result
-        if (res.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        if (debug) {
-            System.out.println(res);
-        }
-
-        System.out.println(res);
-
-        for (String emotion : emotions) {
-            Long value = (Long)res.get(0).get("value");
-            Reaction reaction = new Reaction(emotion, value);
-            allReactions.add(reaction);
-        }
-
-        return allReactions;
-
-    }
 
     /**
      * Returns the total views for specific product in the window in given time interval
@@ -124,12 +77,12 @@ public class ProductAccess extends Database {
 
         Long counter = 0L;
 
-        try(DashboardAccess access = new DashboardAccess(this)) {
+        // checking if the person is smiling
+        Long c = getSmilesForProduct(fromTime, toTime, objectId, cameraId);
+        if (c > 0)
+            counter += c;
 
-            // checking if the person is smiling
-            Long c = access.getSmilesForProduct(fromTime, toTime, objectId, cameraId);
-            if (c > 0)
-                counter += c;
+        try(DashboardAccess access = new DashboardAccess(this)) {
 
             // getting all reactions for object
             List<Reaction> reactions = access.getReactionsPerProduct(cameraId, objectId, fromTime, toTime);
@@ -148,13 +101,31 @@ public class ProductAccess extends Database {
         return counter;
     }
 
+    /**
+     * Returns the number of smiles for specific object for given store and time interval
+     * @param fromTime
+     * @param toTime
+     * @param object_id
+     * @return
+     * @throws SQLException
+     */
+    public Long getSmilesForProduct(Timestamp fromTime, Timestamp toTime, String object_id, String camera_id) throws SQLException {
+        String query = "select count(smile) as value from images_table\n" +
+                "where object_id = ? and timestamp between ? and ?\n" +
+                "AND smile=1 AND camera_id=?";
 
-    public List<Product> getAllProductInWindow(String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
-        try(DashboardAccess access = new DashboardAccess(this)) {
-            return access.getAllProductInWindow(cameraId, fromTime, toTime);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return new ArrayList<Product>();
+        List<Map<String, Object>> res = sql.get(
+                query,
+                object_id, fromTime, toTime, camera_id
+        );
+
+        if (res.isEmpty())
+            return 0L;
+
+        if (debug)
+            System.out.println(res);
+
+        return (Long) res.get(0).get("value");
     }
+
 }

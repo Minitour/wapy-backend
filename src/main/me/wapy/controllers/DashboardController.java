@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import me.wapy.database.data_access.DashboardAccess;
+import me.wapy.database.data_access.ProductAccess;
 import me.wapy.model.Product;
 import me.wapy.model.Reaction;
 import me.wapy.utils.JSONResponse;
@@ -51,7 +52,7 @@ public class DashboardController implements RESTRoute {
         String toTimeString = jsonObject.get("toTime").getAsString();
         Timestamp toTime = Timestamp.valueOf(toTimeString);
 
-        JsonObject jsonResponse = new JsonObject();
+        JsonObject jsonBuilder = new JsonObject();
 
         try(DashboardAccess access = new DashboardAccess()) {
 
@@ -64,7 +65,7 @@ public class DashboardController implements RESTRoute {
 
             // adding the traffic number to the json response
             // will get 0 or above - no nulls
-            jsonResponse.addProperty("traffic", counter);
+            jsonBuilder.addProperty("traffic", counter);
 
 
             // ---------------------------------------------------------------//
@@ -79,7 +80,7 @@ public class DashboardController implements RESTRoute {
                 JsonObject jsonProduct = getProductAsJson(most_viewed_product);
 
                 // append to the json response
-                jsonResponse.add("most_viewed_product", jsonProduct);
+                jsonBuilder.add("most_viewed_product", jsonProduct);
             }
 
             // ---------------------------------------------------------------//
@@ -95,7 +96,7 @@ public class DashboardController implements RESTRoute {
                 JsonObject jsonProduct = getProductAsJson(least_viewed_product);
 
                 // append to the json response
-                jsonResponse.add("least_viewed_product", jsonProduct);
+                jsonBuilder.add("least_viewed_product", jsonProduct);
             }
 
             // ---------------------------------------------------------------//
@@ -111,7 +112,7 @@ public class DashboardController implements RESTRoute {
                 JsonObject jsonProduct = getProductAsJson(most_viewed_reaction_product);
 
                 // append to the json response
-                jsonResponse.add("most_viewed_reaction_product", jsonProduct);
+                jsonBuilder.add("most_viewed_reaction_product", jsonProduct);
             }
 
             // ---------------------------------------------------------------//
@@ -126,7 +127,7 @@ public class DashboardController implements RESTRoute {
                 JsonObject jsonProduct = getProductAsJson(least_viewed_reaction_product);
 
                 // append to the json response
-                jsonResponse.add("least_viewed_reaction_product", jsonProduct);
+                jsonBuilder.add("least_viewed_reaction_product", jsonProduct);
             }
 
 
@@ -137,7 +138,7 @@ public class DashboardController implements RESTRoute {
 
             // adding the exposure to the json response
             // will get 0 and above -> no nulls
-            jsonResponse.addProperty("exposure", exposure);
+            jsonBuilder.addProperty("exposure", exposure);
 
 
             // ---------------------------------------------------------------//
@@ -168,7 +169,7 @@ public class DashboardController implements RESTRoute {
                     jsonProducts.add(getProductAsJson(product));
                 }
 
-                jsonResponse.add("products_in_window", jsonProducts);
+                jsonBuilder.add("products_in_window", jsonProducts);
             }
 
 
@@ -177,7 +178,7 @@ public class DashboardController implements RESTRoute {
             // the next functions are dependent that there are objects in the product list
             // ---------------------------------------------------------------//
             if (productsList.isEmpty()) {
-                return JSONResponse.FAILURE().data(jsonResponse);
+                return JSONResponse.FAILURE().data(jsonBuilder);
             }
 
 
@@ -196,18 +197,21 @@ public class DashboardController implements RESTRoute {
             // ---------------------------------------------------------------//
             JsonObject smilePerProduct = new JsonObject();
 
-            for (Product product : productsList) {
-                // getting the info from the product
-                String product_id = product.getObject_id();
+            try(ProductAccess pAccess = new ProductAccess(access)){
+                for (Product product : productsList) {
+                    // getting the info from the product
+                    String product_id = product.getObject_id();
 
-                // getting the smiles for the product
-                Long smilesForProduct = access.getSmilesForProduct(fromTime, toTime, product_id, camera_id);
+                    // getting the smiles for the product
+                    Long smilesForProduct = pAccess.getSmilesForProduct(fromTime, toTime, product_id, camera_id);
 
-                smilePerProduct.addProperty(product_id, smilesForProduct);
+                    smilePerProduct.addProperty(product_id, smilesForProduct);
+                }
+
+                // adding the smiles to the json response
+                jsonBuilder.add("smiles_per_product", smilePerProduct);
             }
 
-            // adding the smiles to the json response
-            jsonResponse.add("smiles_per_product", smilePerProduct);
 
 
             // ---------------------------------------------------------------//
@@ -246,69 +250,72 @@ public class DashboardController implements RESTRoute {
             }
 
             // adding the reactions to the json response
-            jsonResponse.add("products_reactions", productReactionsDict);
+            jsonBuilder.add("products_reactions", productReactionsDict);
+
+            JsonObject jsonResponse = new JsonObject();
+            jsonResponse.add("dashboard", jsonBuilder);
 
             // return the json response with all the dashboard data we need
             return JSONResponse.SUCCESS().message(String.valueOf(jsonResponse));
 
             /*
             response will be like this:
-            {
-                "traffic": "",
-                "most_viewed_product": {
-                    "camera_id" : "",
-                    "object_id" : "",
-                    "store_id" : "",
-                    "timestamp" : "",
-                    "value" : "",
-                },
-                "least_viewed_product": {
-                    "camera_id" : "",
-                    "object_id" : "",
-                    "store_id" : "",
-                    "timestamp" : "",
-                    "value" : "",
-                },
-                "most_viewed_reaction_product": {
-                    "camera_id" : "",
-                    "object_id" : "",
-                    "store_id" : "",
-                    "timestamp" : "",
-                    "value" : "",
-                },
-                 "least_viewed_reaction_product": {
-                    "camera_id" : "",
-                    "object_id" : "",
-                    "store_id" : "",
-                    "timestamp" : "",
-                    "value" : "",
-                },
-                "exposure": "value",
-                "products_in_window": [
-                    {
+             "dashboard": {
+                    "traffic": "",
+                    "most_viewed_product": {
                         "camera_id" : "",
                         "object_id" : "",
                         "store_id" : "",
                         "timestamp" : "",
                         "value" : "",
-                    }
-                ],
-                "smiles_per_product": {
-                    "product_id_1" : "",
-                    "product_id_2" : ""
+                    },
+                    "least_viewed_product": {
+                        "camera_id" : "",
+                        "object_id" : "",
+                        "store_id" : "",
+                        "timestamp" : "",
+                        "value" : "",
+                    },
+                    "most_viewed_reaction_product": {
+                        "camera_id" : "",
+                        "object_id" : "",
+                        "store_id" : "",
+                        "timestamp" : "",
+                        "value" : "",
+                    },
+                     "least_viewed_reaction_product": {
+                        "camera_id" : "",
+                        "object_id" : "",
+                        "store_id" : "",
+                        "timestamp" : "",
+                        "value" : "",
+                    },
+                    "exposure": "value",
+                    "products_in_window": [
+                        {
+                            "camera_id" : "",
+                            "object_id" : "",
+                            "store_id" : "",
+                            "timestamp" : "",
+                            "value" : "",
+                        }
+                    ],
+                    "smiles_per_product": {
+                        "product_id_1" : "",
+                        "product_id_2" : ""
 
-                },
-                "products_reactions": {
-                    "product_id_1": {
-                            "sad": "value",
-                            "angry": "value"
-                     },
-                     "product_id_2": {
-                            "sad": "value",
-                            "angry": "value"
+                    },
+                    "products_reactions": {
+                        "product_id_1": {
+                                "sad": "value",
+                                "angry": "value"
+                         },
+                         "product_id_2": {
+                                "sad": "value",
+                                "angry": "value"
+                         }
                      }
-                 }
-            }
+                }
              */
 
         }catch (Exception e) {

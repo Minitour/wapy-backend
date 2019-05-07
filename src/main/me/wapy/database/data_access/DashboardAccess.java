@@ -246,23 +246,24 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Long getSmilesForProduct(Timestamp fromTime, Timestamp toTime, String object_id, String camera_id) throws SQLException {
-        String query = "select count(smile) as value from images_table\n" +
-                "where object_id = ? and timestamp between ? and ?\n" +
-                "AND smile=1 AND camera_id=?";
+    public List<Product> getSmilesForProduct(Timestamp fromTime, Timestamp toTime, String camera_id) throws SQLException {
 
-        List<Map<String, Object>> res = sql.get(
-                query,
-                object_id, fromTime, toTime, camera_id
-        );
+        List<Product> productList = getAllProductInWindow(camera_id, fromTime, toTime);
 
-        if (res.isEmpty())
-            return 0L;
+        if (productList.isEmpty())
+            return new ArrayList<Product>();
 
-        if (debug)
-            System.out.println(res);
+        try(ProductAccess access = new ProductAccess(this)) {
+            for (Product product : productList) {
 
-        return (Long) res.get(0).get("value");
+                Long smiles = access.getSmilesForProduct(fromTime, toTime, product.getObject_id(), camera_id);
+                product.setValue(smiles);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return productList;
     }
 
     /**
@@ -275,30 +276,10 @@ public class DashboardAccess extends Database {
     public List<Reaction> getReactionsPerProduct(String cameraId, String object_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
         List<Reaction> reactions = new ArrayList<>();
 
-        String[] emotions = {"calm", "happy", "confused", "disgusted", "angry", "sad"};
-
-        for (String emotion : emotions) {
-            // construct the query
-            String query = "select " + emotion + " as reaction, count(object_id) as value from images_table\n" +
-                    "where timestamp between ? and ?\n" +
-                    "AND " + emotion +" >= 50.0 AND object_id=? AND camera_id=?";
-
-            // get all records for the query
-            List<Map<String, Object>> res = sql.get(
-                    query,
-                    fromTime, toTime, object_id, cameraId
-            );
-
-            if (!res.isEmpty()) {
-
-                // construct the reaction object
-                Float value = (Float)res.get(0).get("reaction");
-                Reaction reaction = new Reaction(emotion, value.longValue());
-
-                // add reaction to the list
-                reactions.add(reaction);
-
-            }
+        try(BoxAccess access = new BoxAccess(this)) {
+            reactions = access.getAllReactionsPerProductPerBox(object_id, cameraId, fromTime, toTime);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return reactions;
