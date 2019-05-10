@@ -46,4 +46,24 @@ public class Product extends DBObject{
     }
 
     public Long getValue() {return value;}
+
+    public void setObject_id(String object_id) {
+        this.object_id = object_id;
+    }
+
+    public void setStore_id(String store_id) {
+        this.store_id = store_id;
+    }
+
+    public void setCamera_id(String camera_id) {
+        this.camera_id = camera_id;
+    }
+
+    public void setTimestamp(Timestamp timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public void setValue(Long value) {
+        this.value = value;
+    }
 }

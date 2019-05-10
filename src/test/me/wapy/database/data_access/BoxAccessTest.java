@@ -1,7 +1,9 @@
 package me.wapy.database.data_access;
 
+import me.wapy.database.AuthContext;
 import me.wapy.database.Database;
 import me.wapy.model.Product;
+import me.wapy.model.Reaction;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,27 +30,37 @@ public class BoxAccessTest {
         access.close();
     }
 
-    @Test
-    public void getAllProductsInWindow() throws Exception {
-        String camera_id = "1";
-        List<Product> productList = access.getAllProductsInWindow(camera_id, start, end);
-        for (Product product : productList) {
-            System.out.println(String.format("product: %s", product.getObject_id()));
-        }
-    }
-
-    @Test
-    public void getMostViewedProductInWindow() throws Exception {
-        String camera_id = "1";
-        Product product = access.getMostViewedProductInWindow(camera_id, start, end);
-        System.out.println(product.getObject_id());
-    }
-
-    @Test
-    public void getLeastViewedProductInWindow() throws Exception {
-        String camera_id = "1";
-        Product product = access.getLeastViewedProductInWindow(camera_id, start, end);
-        System.out.println(product.getObject_id());
-    }
+//    @Test
+//    public void getAllProductsInWindow() throws Exception {
+//        String camera_id = "1";
+//        List<Product> productList = access.getAllProductsInWindow(null, camera_id, start, end);
+//        for (Product product : productList) {
+//            System.out.println(String.format("product: %s", product.getObject_id()));
+//        }
+//    }
+//
+//    @Test
+//    public void getMostViewedProductInWindow() throws Exception {
+//        String camera_id = "1";
+//        Product product = access.getMostViewedProductInWindow(null, camera_id, start, end);
+//        System.out.println(product.getObject_id());
+//    }
+//
+//    @Test
+//    public void getLeastViewedProductInWindow() throws Exception {
+//        String camera_id = "1";
+//        Product product = access.getLeastViewedProductInWindow(null ,camera_id, start, end);
+//        System.out.println(product.getObject_id());
+//    }
+//
+//    @Test
+//    public void getAllReactionsPerProductPerBox() throws Exception {
+//        String camera_id = "1";
+//        String object_id = "1";
+//        List<Reaction> reactions = access.getAllReactionsPerProductPerBox(null,object_id, camera_id, start, end);
+//        for (Reaction reaction : reactions) {
+//            System.out.println(String.format("reaction: %s, value: %s", reaction.getReaction(), reaction.getValue()));
+//        }
+//    }
 
 }

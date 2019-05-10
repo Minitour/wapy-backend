@@ -1,5 +1,6 @@
 package me.wapy.database.data_access;
 
+import me.wapy.database.AuthContext;
 import me.wapy.database.Database;
 import me.wapy.model.Product;
 import me.wapy.model.Reaction;
@@ -229,7 +230,7 @@ public class DashboardAccess extends Database {
         );
 
         if (res.isEmpty())
-            return null;
+            return 0L;
 
         if (debug)
             System.out.println(res);
@@ -241,27 +242,27 @@ public class DashboardAccess extends Database {
      * Returns the number of smiles for specific object for given store and time interval
      * @param fromTime
      * @param toTime
-     * @param object_id
      * @return
      * @throws SQLException
      */
-    public Long getSmilesForProduct(Timestamp fromTime, Timestamp toTime, String object_id) throws SQLException {
-        String query = "select count(smile) as value from images_table\n" +
-                "where object_id = ? and timestamp between ? and ?\n" +
-                "AND smile=1";
+    public List<Product> getSmilesForProduct(Timestamp fromTime, Timestamp toTime, String camera_id) throws SQLException {
 
-        List<Map<String, Object>> res = sql.get(
-                query,
-                object_id, fromTime, toTime
-        );
+        List<Product> productList = getAllProductInWindow(camera_id, fromTime, toTime);
 
-        if (res.isEmpty())
-            return null;
+        if (productList.isEmpty())
+            return new ArrayList<Product>();
 
-        if (debug)
-            System.out.println(res);
+        try(ProductAccess access = new ProductAccess(this)) {
+            for (Product product : productList) {
 
-        return (Long) res.get(0).get("value");
+                Long smiles = access.getSmilesForProduct(fromTime, toTime, product.getObject_id(), camera_id);
+                product.setValue(smiles);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return productList;
     }
 
     /**
@@ -271,36 +272,33 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Reaction> getReactionsPerProduct(String object_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
-        List<Reaction> reactions = new ArrayList<>();
+    public List<Map<String,List<Reaction>>> getReactionsPerProduct(String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+        List<Map<String,List<Reaction>>> productsReactions = new ArrayList<>();
 
-        String[] emotions = {"calm", "happy", "confused", "disgusted", "angry", "sad"};
+        List<Product> productList = getAllProductInWindow(cameraId, fromTime, toTime);
 
-        for (String emotion : emotions) {
-            // construct the query
-            String query = "select " + emotion + " as reaction, count(object_id) as value from images_table\n" +
-                    "where timestamp between ? and ?\n" +
-                    "AND " + emotion +" >= 50.0 AND object_id=?";
+        if (productList.isEmpty())
+            return productsReactions;
 
-            // get all records for the query
-            List<Map<String, Object>> res = sql.get(
-                    query,
-                    fromTime, toTime, object_id
-            );
+        try(BoxAccess access = new BoxAccess(this)) {
+            Map<String, List<Reaction>> productReaction = new HashMap<>();
+            for (Product product : productList) {
 
-            if (!res.isEmpty()) {
+                // getting all reactions for product
+                List<Reaction> reactions = access.getAllReactionsPerProductPerBox(product.getObject_id(), cameraId, fromTime, toTime);
 
-                // construct the reaction object
-                Float value = (Float)res.get(0).get("reaction");
-                Reaction reaction = new Reaction(emotion, value.longValue());
+                // construct a hashmap
+                productReaction.put(product.getObject_id(), reactions);
 
-                // add reaction to the list
-                reactions.add(reaction);
-
+                // add to the list of product with reactions
+                productsReactions.add(productReaction);
             }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        return reactions;
+        return productsReactions;
     }
 
     /**

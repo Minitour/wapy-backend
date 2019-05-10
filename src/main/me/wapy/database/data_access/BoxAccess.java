@@ -1,10 +1,13 @@
 package me.wapy.database.data_access;
 
+import me.wapy.database.AuthContext;
 import me.wapy.database.Database;
 import me.wapy.model.Product;
+import me.wapy.model.Reaction;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +42,7 @@ public class BoxAccess extends Database {
         }catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+        return new ArrayList<>();
     }
 
     /**
@@ -114,4 +117,49 @@ public class BoxAccess extends Database {
         return product;
     }
 
+    /**
+     * Return all reactions for specific product and box in a given time interval
+     * @param objectId
+     * @param cameraId
+     * @param fromTime
+     * @param toTime
+     * @return
+     * @throws SQLException
+     */
+    public List<Reaction> getAllReactionsPerProductPerBox(String objectId, String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+        String[] emotions = {"calm", "happy", "confused", "disgusted", "angry", "sad"};
+        List<Reaction> allReactions = new ArrayList<>();
+
+        String query = "select count(object_id) as value, " + String.join(",", emotions) + " from images_table\n" +
+                "where timestamp between ? and ? AND ";
+
+        for (String emotion : emotions) {
+            query += emotion + " >= 50.0 AND ";
+        }
+
+        query += "object_id=? and camera_id=?";
+
+        // getting the results for the query
+        List<Map<String, Object>> res = sql.get(
+                query,
+                fromTime, toTime, objectId, cameraId
+        );
+
+        // checking for validation of result
+        if (res.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        if (debug) {
+            System.out.println(res);
+        }
+        System.out.println(res);
+        for (String emotion : emotions) {
+            Float value = (Float)res.get(0).get("value");
+            Reaction reaction = new Reaction(emotion, value.longValue());
+            allReactions.add(reaction);
+        }
+
+        return allReactions;
+    }
 }
