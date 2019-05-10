@@ -26,7 +26,6 @@ public class ProductController implements RESTRoute {
         body structure:
         {
             "camera_id" : "1",
-            "object_id": "1",
             "fromTime": "2019-04-12 12:34:12",
             "toTime": "2019-04-12 12:45:12"
         }
@@ -43,22 +42,23 @@ public class ProductController implements RESTRoute {
                 can give us the reactions for product
          */
 
-        // get the response as json object for extraction
-        JsonObject jsonObject = gson.fromJson(body, JsonObject.class);
-
         // get the camera id
-        String camera_id = jsonObject.get("camera_id").getAsString();
+        String camera_id = body.has("camera_id") ? body.get("camera_id").getAsString() : "";
 
-        // get the camera id
-        String object_id = jsonObject.get("object_id").getAsString();
+        // get the object id from the request parameters
+        String object_id = request.params(":id") != null ? request.params(":id") : "";
 
         // get the from timestamp
-        String fromTimeString = jsonObject.get("fromTime").getAsString();
-        Timestamp fromTime = Timestamp.valueOf(fromTimeString);
+        String fromTimeString = body.has("fromTime") ? body.get("fromTime").getAsString() : "";
+        Timestamp fromTime = !fromTimeString.equals("") ? Timestamp.valueOf(fromTimeString) : null;
 
         // get the to timestamp
-        String toTimeString = jsonObject.get("toTime").getAsString();
-        Timestamp toTime = Timestamp.valueOf(toTimeString);
+        String toTimeString = body.has("toTime") ? body.get("toTime").getAsString() : "";
+        Timestamp toTime = !toTimeString.equals("") ? Timestamp.valueOf(toTimeString) : null;
+
+        // checking for nulls
+        if (object_id.equals("") || fromTime == null || toTime == null || camera_id.equals(""))
+            return JSONResponse.FAILURE().message("missing parameters");
 
         JsonObject jsonBuilder = new JsonObject();
 

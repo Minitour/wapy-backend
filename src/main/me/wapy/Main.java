@@ -26,7 +26,7 @@ public class Main {
         //TODO: add controllers
         port(8080);
         make("/dashboard", new DashboardController());
-        make("/product/{}", new ProductController());
+        make("/product/:id", new ProductController());
     }
 
     public static void make(String route, RESTRoute controller) {

@@ -40,19 +40,19 @@ public class DashboardController implements RESTRoute {
                 can give us the reactions for product
          */
 
-        // get the response as json object for extraction
-        JsonObject jsonObject = gson.fromJson(body, JsonObject.class);
-
         // get the camera id
-        String camera_id = jsonObject.get("camera_id").getAsString();
+        String camera_id = body.has("camera_id") ? body.get("camera_id").getAsString() : "";
 
         // get the from timestamp
-        String fromTimeString = jsonObject.get("fromTime").getAsString();
-        Timestamp fromTime = Timestamp.valueOf(fromTimeString);
+        String fromTimeString = body.has("fromTime") ? body.get("fromTime").getAsString() : "";
+        Timestamp fromTime = !fromTimeString.equals("") ? Timestamp.valueOf(fromTimeString) : null;
 
         // get the to timestamp
-        String toTimeString = jsonObject.get("toTime").getAsString();
-        Timestamp toTime = Timestamp.valueOf(toTimeString);
+        String toTimeString = body.has("toTime") ? body.get("toTime").getAsString() : "";
+        Timestamp toTime = !toTimeString.equals("") ? Timestamp.valueOf(toTimeString) : null;
+
+        if (camera_id.equals("") || fromTime == null || toTime == null)
+            return JSONResponse.FAILURE().message("missing parameters");
 
         JsonObject jsonBuilder = new JsonObject();
 
@@ -269,7 +269,7 @@ public class DashboardController implements RESTRoute {
             jsonResponse.add("dashboard", jsonBuilder);
 
             // return the json response with all the dashboard data we need
-            return JSONResponse.SUCCESS().message(String.valueOf(jsonResponse));
+            return JSONResponse.SUCCESS().data(jsonResponse);
 
             /*
             response will be like this:
