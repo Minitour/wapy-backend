@@ -334,4 +334,58 @@ public class DashboardAccess extends Database {
         return products;
     }
 
+    /**
+     * Gets all reactions in a given time frame based on account id.
+     *
+     * Response example:
+     *
+     * | value | type  |
+     * | ----- | ----- |
+     * | 232   | happy |
+     * | 13    | sad   |
+     * | 51    | calm  |
+     *
+     *
+     * @param userId The id of the account.
+     * @param fromTime The start time.
+     * @param toTime The end time.
+     * @return
+     * @throws SQLException
+     */
+    public List<Reaction> getReactionSummary(String userId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+        String[] fields = {"calm","happy","confused","disgusted","angry","sad","surprised"};
+        String template = "(select count(*) as value, '%s' as type from images_table where %s > 50 and user_id = ? and timestamp between ? and ?)";
+        List<Object> args = new ArrayList<>();
+        StringBuilder query = new StringBuilder();
+
+        for (int i = 0; i < fields.length; i++) {
+
+            // create query from template.
+            String reaction = fields[i];
+            query.append(String.format(template,reaction,reaction));
+
+            // add arguments.
+            args.add(userId);
+            args.add(fromTime);
+            args.add(toTime);
+
+            // append union all only if not the last entry.
+            if(i < fields.length - 2)
+                query.append(" UNION ALL ");
+        }
+
+        // run the query.
+        List<Map<String,Object>> rs = sql.get(query.toString(),args.toArray());
+
+        // parse results
+        List<Reaction> reactions = new ArrayList<>();
+        for (Map<String, Object> r : rs) {
+            Long value = (Long) r.get("value");
+            String type = (String) r.get("type");
+            reactions.add(new Reaction(type,value));
+        }
+        
+        return reactions;
+    }
+
 }

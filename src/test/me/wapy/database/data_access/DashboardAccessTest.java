@@ -71,20 +71,20 @@ public class DashboardAccessTest {
 
     @Test
     public void getSmilesForProduct() throws Exception {
-        String object_id = "1";
-        String camera_id = "1";
-        Long val = db.getSmilesForProduct(start, end, object_id, camera_id);
-        System.out.println(val);
+//        String object_id = "1";
+//        String camera_id = "1";
+//        Long val = db.getSmilesForProduct(start, end, object_id, camera_id);
+//        System.out.println(val);
     }
 
     @Test
     public void getReactionsPerProduct() throws Exception {
-        String object_id = "1";
-        String camera_id = "1";
-        List<Reaction> reactions = db.getReactionsPerProduct(camera_id, object_id, start, end);
-        for (Reaction reaction : reactions) {
-            System.out.println(String.format("key: %s , value: %s", String.valueOf(reaction.getReaction()), String.valueOf(reaction.getValue())));
-        }
+//        String object_id = "1";
+//        String camera_id = "1";
+//        List<Reaction> reactions = db.getReactionsPerProduct(camera_id, object_id, start, end);
+//        for (Reaction reaction : reactions) {
+//            System.out.println(String.format("key: %s , value: %s", String.valueOf(reaction.getReaction()), String.valueOf(reaction.getValue())));
+//        }
     }
 
     @Test
