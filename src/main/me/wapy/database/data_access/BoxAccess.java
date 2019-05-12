@@ -33,10 +33,15 @@ public class BoxAccess extends Database {
      * @param toTime
      * @return
      */
-    public List<Product> getAllProductsInWindow(String owner_uid, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public List<Product> getAllProductsInWindow(String owner_uid, String camera_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
 
         try(DashboardAccess access = new DashboardAccess(this)) {
-            List<Product> products = access.getAllProductInWindow(owner_uid, fromTime, toTime);
+            List<Product> rawProducts = access.getAllProductInWindow(owner_uid, fromTime, toTime);
+            List<Product> products = new ArrayList<>();
+            for (Product rawProduct : rawProducts) {
+                if (rawProduct.getCamera_id().equals(camera_id))
+                    products.add(rawProduct);
+            }
             return products;
 
         }catch (Exception e) {
