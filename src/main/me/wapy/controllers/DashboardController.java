@@ -27,21 +27,21 @@ public class DashboardController implements RESTRoute {
         /*
         body structure:
         {
-            "camera_id" : "1",
+            "owner_uid" : "1",
             "fromTime": "2019-04-12 12:34:12",
             "toTime": "2019-04-12 12:45:12"
         }
 
         ## this is the minimal info we need to send the controller results
 
-        ## from the camera_id we will get all the product in window ->
+        ## from the owner_uid we will get all the product in window ->
                 can give us the smiles for product
                 and
                 can give us the reactions for product
          */
 
         // get the camera id
-        String camera_id = body.has("camera_id") ? body.get("camera_id").getAsString() : "";
+        String owner_uid = body.has("owner_uid") ? body.get("owner_uid").getAsString() : "";
 
         // get the from timestamp
         String fromTimeString = body.has("fromTime") ? body.get("fromTime").getAsString() : "";
@@ -51,7 +51,7 @@ public class DashboardController implements RESTRoute {
         String toTimeString = body.has("toTime") ? body.get("toTime").getAsString() : "";
         Timestamp toTime = !toTimeString.equals("") ? Timestamp.valueOf(toTimeString) : null;
 
-        if (camera_id.equals("") || fromTime == null || toTime == null)
+        if (owner_uid.equals("") || fromTime == null || toTime == null)
             return JSONResponse.FAILURE().message("missing parameters");
 
         JsonObject jsonBuilder = new JsonObject();
@@ -149,7 +149,7 @@ public class DashboardController implements RESTRoute {
             {
                 "products": [
                     {
-                        "camera_id" : "",
+                        "owner_uid" : "",
                         "object_id" : "",
                         "store_id" : "",
                         "timestamp" : "",
@@ -160,7 +160,7 @@ public class DashboardController implements RESTRoute {
              */
             // we are getting the products for window and will use later also
             // ---------------------------------------------------------------//
-            List<Product> productsList = access.getAllProductInWindow(camera_id, fromTime, toTime);
+            List<Product> productsList = access.getAllProductInWindow(owner_uid, fromTime, toTime);
 
             // checking we have a list to append
             if (!productsList.isEmpty()) {
@@ -205,7 +205,7 @@ public class DashboardController implements RESTRoute {
                     String product_id = product.getObject_id();
 
                     // getting the smiles for the product
-                    Long smilesForProduct = pAccess.getSmilesForProduct(fromTime, toTime, product_id, camera_id);
+                    Long smilesForProduct = pAccess.getSmilesForProduct(fromTime, toTime, product_id, owner_uid);
 
                     smilePerProduct.addProperty(product_id, smilesForProduct);
                 }
@@ -236,7 +236,7 @@ public class DashboardController implements RESTRoute {
             // ---------------------------------------------------------------//
 
             // getting all reactions for all products
-            List<Map<String,List<Reaction>>> productsReactionsList = access.getReactionsPerProduct(camera_id, fromTime, toTime);
+            List<Map<String,List<Reaction>>> productsReactionsList = access.getReactionsPerProduct(owner_uid, fromTime, toTime);
 
             // json with products and the reactions corresponding to the product
             JsonObject jsonProductReactions = new JsonObject();
@@ -276,28 +276,28 @@ public class DashboardController implements RESTRoute {
              "dashboard": {
                     "traffic": "",
                     "most_viewed_product": {
-                        "camera_id" : "",
+                        "owner_uid" : "",
                         "object_id" : "",
                         "store_id" : "",
                         "timestamp" : "",
                         "value" : "",
                     },
                     "least_viewed_product": {
-                        "camera_id" : "",
+                        "owner_uid" : "",
                         "object_id" : "",
                         "store_id" : "",
                         "timestamp" : "",
                         "value" : "",
                     },
                     "most_viewed_reaction_product": {
-                        "camera_id" : "",
+                        "owner_uid" : "",
                         "object_id" : "",
                         "store_id" : "",
                         "timestamp" : "",
                         "value" : "",
                     },
                      "least_viewed_reaction_product": {
-                        "camera_id" : "",
+                        "owner_uid" : "",
                         "object_id" : "",
                         "store_id" : "",
                         "timestamp" : "",
@@ -306,7 +306,7 @@ public class DashboardController implements RESTRoute {
                     "exposure": "value",
                     "products_in_window": [
                         {
-                            "camera_id" : "",
+                            "owner_uid" : "",
                             "object_id" : "",
                             "store_id" : "",
                             "timestamp" : "",
