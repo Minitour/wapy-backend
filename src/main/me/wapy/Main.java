@@ -28,7 +28,7 @@ public class Main {
         port(8080);
         make("/dashboard", new DashboardController());
         make("/product/:id", new ProductController());
-        make("box/:id", new BoxController());
+        make("/box/:id", new BoxController());
     }
 
     public static void make(String route, RESTRoute controller) {
