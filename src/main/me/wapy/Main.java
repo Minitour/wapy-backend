@@ -1,5 +1,6 @@
 package me.wapy;
 
+import me.wapy.controllers.BoxController;
 import me.wapy.controllers.DashboardController;
 import me.wapy.controllers.ProductController;
 import me.wapy.database.Database;
@@ -27,6 +28,7 @@ public class Main {
         port(8080);
         make("/dashboard", new DashboardController());
         make("/product/:id", new ProductController());
+        make("/box/:id", new BoxController());
     }
 
     public static void make(String route, RESTRoute controller) {

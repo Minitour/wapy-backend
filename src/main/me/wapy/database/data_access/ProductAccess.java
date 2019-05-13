@@ -37,16 +37,16 @@ public class ProductAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Long getTotalViewsPerProduct(String cameraId, String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Long getTotalViewsPerProduct(String owner_uid, String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
 
         String query = "SELECT count(*) as value FROM objects_table \n" +
                 "WHERE\n" +
-                "timestamp BETWEEN ? and ? AND object_id =? AND camera_id=?";
+                "timestamp BETWEEN ? and ? AND object_id =? AND owner_uid=?";
 
         // getting the results for the query
         List<Map<String, Object>> res = sql.get(
                 query,
-                fromTime, toTime, objectId, cameraId
+                fromTime, toTime, objectId, owner_uid
         );
 
         // checking for validation of result
@@ -70,7 +70,7 @@ public class ProductAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Long getTotalLikesPerProduct(String cameraId, String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Long getTotalLikesPerProduct(String owner_uid, String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         List<String> emotions = new ArrayList<>();
         emotions.add("calm");
         emotions.add("happy");
@@ -78,14 +78,14 @@ public class ProductAccess extends Database {
         Long counter = 0L;
 
         // checking if the person is smiling
-        Long c = getSmilesForProduct(fromTime, toTime, objectId, cameraId);
+        Long c = getSmilesForProduct(fromTime, toTime, objectId, owner_uid);
         if (c > 0)
             counter += c;
 
         try(BoxAccess access = new BoxAccess(this)) {
 
             // getting all reactions for object
-            List<Reaction> reactions = access.getAllReactionsPerProductPerBox(objectId, cameraId, fromTime, toTime);
+            List<Reaction> reactions = access.getAllReactionsPerProductPerBox(objectId, owner_uid, fromTime, toTime);
 
             // checking if one of the reactions are in the friendly zone
             for (Reaction reaction : reactions) {
@@ -109,14 +109,14 @@ public class ProductAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Long getSmilesForProduct(Timestamp fromTime, Timestamp toTime, String object_id, String camera_id) throws SQLException {
+    public Long getSmilesForProduct(Timestamp fromTime, Timestamp toTime, String object_id, String owner_uid) throws SQLException {
         String query = "select count(smile) as value from images_table\n" +
                 "where object_id = ? and timestamp between ? and ?\n" +
-                "AND smile=1 AND camera_id=?";
+                "AND smile=1 AND owner_uid=?";
 
         List<Map<String, Object>> res = sql.get(
                 query,
-                object_id, fromTime, toTime, camera_id
+                object_id, fromTime, toTime, owner_uid
         );
 
         if (res.isEmpty())

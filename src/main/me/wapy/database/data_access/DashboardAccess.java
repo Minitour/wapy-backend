@@ -245,9 +245,9 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Product> getSmilesForProduct(Timestamp fromTime, Timestamp toTime, String camera_id) throws SQLException {
+    public List<Product> getSmilesForProduct(Timestamp fromTime, Timestamp toTime, String owner_uid) throws SQLException {
 
-        List<Product> productList = getAllProductInWindow(camera_id, fromTime, toTime);
+        List<Product> productList = getAllProductInWindow(owner_uid, fromTime, toTime);
 
         if (productList.isEmpty())
             return new ArrayList<Product>();
@@ -255,7 +255,7 @@ public class DashboardAccess extends Database {
         try(ProductAccess access = new ProductAccess(this)) {
             for (Product product : productList) {
 
-                Long smiles = access.getSmilesForProduct(fromTime, toTime, product.getObject_id(), camera_id);
+                Long smiles = access.getSmilesForProduct(fromTime, toTime, product.getObject_id(), owner_uid);
                 product.setValue(smiles);
             }
         } catch (Exception e) {
@@ -272,10 +272,10 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Map<String,List<Reaction>>> getReactionsPerProduct(String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public List<Map<String,List<Reaction>>> getReactionsPerProduct(String owner_uid, Timestamp fromTime, Timestamp toTime) throws SQLException {
         List<Map<String,List<Reaction>>> productsReactions = new ArrayList<>();
 
-        List<Product> productList = getAllProductInWindow(cameraId, fromTime, toTime);
+        List<Product> productList = getAllProductInWindow(owner_uid, fromTime, toTime);
 
         if (productList.isEmpty())
             return productsReactions;
@@ -285,7 +285,7 @@ public class DashboardAccess extends Database {
             for (Product product : productList) {
 
                 // getting all reactions for product
-                List<Reaction> reactions = access.getAllReactionsPerProductPerBox(product.getObject_id(), cameraId, fromTime, toTime);
+                List<Reaction> reactions = access.getAllReactionsPerProductPerBox(product.getObject_id(), owner_uid, fromTime, toTime);
 
                 // construct a hashmap
                 productReaction.put(product.getObject_id(), reactions);
@@ -308,10 +308,10 @@ public class DashboardAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Product> getAllProductInWindow(String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public List<Product> getAllProductInWindow(String owner_uid, Timestamp fromTime, Timestamp toTime) throws SQLException {
         List<Product> products = new ArrayList<>() ;
         String query = "SELECT object_id FROM objects_table \n" +
-                "WHERE camera_id=? and\n" +
+                "WHERE owner_uid=? and\n" +
                 "timestamp BETWEEN ? and ?\n" +
                 "GROUP BY object_id";
 
@@ -319,7 +319,7 @@ public class DashboardAccess extends Database {
         // get all records for the query
         List<Map<String, Object>> res = sql.get(
                 query,
-                cameraId, fromTime, toTime
+                owner_uid, fromTime, toTime
         );
 
         if (!res.isEmpty()) {

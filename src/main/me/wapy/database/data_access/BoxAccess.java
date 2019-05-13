@@ -28,15 +28,20 @@ public class BoxAccess extends Database {
 
     /**
      * Return all product in specific window
-     * @param cameraId
+     * @param owner_uid
      * @param fromTime
      * @param toTime
      * @return
      */
-    public List<Product> getAllProductsInWindow(String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public List<Product> getAllProductsInWindow(String owner_uid, String camera_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
 
         try(DashboardAccess access = new DashboardAccess(this)) {
-            List<Product> products = access.getAllProductInWindow(cameraId, fromTime, toTime);
+            List<Product> rawProducts = access.getAllProductInWindow(owner_uid, fromTime, toTime);
+            List<Product> products = new ArrayList<>();
+            for (Product rawProduct : rawProducts) {
+                if (rawProduct.getCamera_id().equals(camera_id))
+                    products.add(rawProduct);
+            }
             return products;
 
         }catch (Exception e) {
@@ -47,27 +52,27 @@ public class BoxAccess extends Database {
 
     /**
      * Return the most viewed product in the specific window
-     * @param cameraId
+     * @param owner_uid
      * @param fromTime
      * @param toTime
      * @return
      * @throws SQLException
      */
-    public Product getMostViewedProductInWindow(String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getMostViewedProductInWindow(String owner_uid, Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
         String query = "SELECT count(object_id) as value, object_id \n" +
                 "FROM objects_table \n" +
                 "WHERE timestamp BETWEEN ? and ?\n" +
-                "AND camera_id=?\n" +
+                "AND owner_uid=?\n" +
                 "GROUP BY object_id\n" +
                 "ORDER BY value DESC\n" +
                 "LIMIT 1";
 
         List<Map<String, Object>> res = sql.get(
                 query,
-                fromTime, toTime, cameraId
+                fromTime, toTime, owner_uid
         );
 
         if (res.isEmpty())
@@ -83,27 +88,27 @@ public class BoxAccess extends Database {
 
     /**
      * Return the most viewed product in the specific window
-     * @param cameraId
+     * @param owner_uid
      * @param fromTime
      * @param toTime
      * @return
      * @throws SQLException
      */
-    public Product getLeastViewedProductInWindow(String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getLeastViewedProductInWindow(String owner_uid, Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
         String query = "SELECT count(object_id) as value, object_id \n" +
                 "FROM objects_table \n" +
                 "WHERE timestamp BETWEEN ? and ?\n" +
-                "AND camera_id=?\n" +
+                "AND owner_uid=?\n" +
                 "GROUP BY object_id\n" +
                 "ORDER BY value ASC\n" +
                 "LIMIT 1";
 
         List<Map<String, Object>> res = sql.get(
                 query,
-                fromTime, toTime, cameraId
+                fromTime, toTime, owner_uid
         );
 
         if (res.isEmpty())
@@ -120,13 +125,13 @@ public class BoxAccess extends Database {
     /**
      * Return all reactions for specific product and box in a given time interval
      * @param objectId
-     * @param cameraId
+     * @param owner_uid
      * @param fromTime
      * @param toTime
      * @return
      * @throws SQLException
      */
-    public List<Reaction> getAllReactionsPerProductPerBox(String objectId, String cameraId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public List<Reaction> getAllReactionsPerProductPerBox(String objectId, String owner_uid, Timestamp fromTime, Timestamp toTime) throws SQLException {
         String[] emotions = {"calm", "happy", "confused", "disgusted", "angry", "sad"};
         List<Reaction> allReactions = new ArrayList<>();
 
@@ -137,12 +142,12 @@ public class BoxAccess extends Database {
             query += emotion + " >= 50.0 AND ";
         }
 
-        query += "object_id=? and camera_id=?";
+        query += "object_id=? and owner_uid=?";
 
         // getting the results for the query
         List<Map<String, Object>> res = sql.get(
                 query,
-                fromTime, toTime, objectId, cameraId
+                fromTime, toTime, objectId, owner_uid
         );
 
         // checking for validation of result
