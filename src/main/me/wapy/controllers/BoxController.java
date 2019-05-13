@@ -19,7 +19,6 @@ public class BoxController implements RESTRoute {
             body structure:
             {
                 "owner_uid" : "1",
-                "camera_id": "",
                 "fromTime": "2019-04-12 12:34:12",
                 "toTime": "2019-04-12 12:45:12"
             }
@@ -35,7 +34,7 @@ public class BoxController implements RESTRoute {
         String owner_uid = body.has("owner_uid") ? body.get("owner_uid").getAsString() : "";
 
         // get the camera id
-        String camera_id = body.has("camera_id") ? body.get("camera_id").getAsString() : "";
+        String camera_id = request.params(":id") != null ? request.params(":id") : "";
 
         // get the from timestamp
         String fromTimeString = body.has("fromTime") ? body.get("fromTime").getAsString() : "";
@@ -45,7 +44,7 @@ public class BoxController implements RESTRoute {
         String toTimeString = body.has("toTime") ? body.get("toTime").getAsString() : "";
         Timestamp toTime = !toTimeString.equals("") ? Timestamp.valueOf(toTimeString) : null;
 
-        if (owner_uid.equals("") || fromTime == null || toTime == null)
+        if (owner_uid.equals("") || camera_id.equals("") || fromTime == null || toTime == null)
             return JSONResponse.FAILURE().message("missing parameters");
 
         JsonObject jsonBuilder = new JsonObject();
