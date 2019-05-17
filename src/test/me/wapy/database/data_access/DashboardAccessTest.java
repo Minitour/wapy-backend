@@ -19,13 +19,13 @@ public class DashboardAccessTest {
 
     DashboardAccess db;
 
-    Timestamp start = Timestamp.valueOf("2019-01-19 03:14:07");
-    Timestamp end = Timestamp.valueOf("2019-03-19 03:14:07");
-    @Before
-    public void setup(){
-        Database.init();
-        db = new DashboardAccess();
-    }
+//    Timestamp start = Timestamp.valueOf("2019-01-19 03:14:07");
+//    Timestamp end = Timestamp.valueOf("2019-03-19 03:14:07");
+//    @Before
+//    public void setup(){
+//        Database.init();
+//        db = new DashboardAccess();
+//    }
 //
 //
 //    public void getTraffic() throws Exception {
@@ -69,23 +69,23 @@ public class DashboardAccessTest {
 //            System.out.println(val);
 //    }
 
-    @Test
-    public void getSmilesForProduct() throws Exception {
+//    @Test
+//    public void getSmilesForProduct() throws Exception {
 //        String object_id = "1";
 //        String camera_id = "1";
 //        Long val = db.getSmilesForProduct(start, end, object_id, camera_id);
 //        System.out.println(val);
-    }
+//    }
 
-    @Test
-    public void getReactionsPerProduct() throws Exception {
+//    @Test
+//    public void getReactionsPerProduct() throws Exception {
 //        String object_id = "1";
 //        String camera_id = "1";
 //        List<Reaction> reactions = db.getReactionsPerProduct(camera_id, object_id, start, end);
 //        for (Reaction reaction : reactions) {
 //            System.out.println(String.format("key: %s , value: %s", String.valueOf(reaction.getReaction()), String.valueOf(reaction.getValue())));
 //        }
-    }
+//    }
 
 //    @Test
 //    public void getAllProductInWindow() throws Exception {
@@ -96,8 +96,8 @@ public class DashboardAccessTest {
 //        }
 //    }
 
-    @After
-    public void tearDown() throws Exception {
-        db.close();
-    }
+//    @After
+//    public void tearDown() throws Exception {
+//        db.close();
+//    }
 }
