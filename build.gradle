@@ -24,6 +24,19 @@ distributions {
     }
 }
 
+task copyConfig(type: Copy) {
+    from "./config.json", "./permissions.json", "./roles.json", "./db.properties"
+    into "${buildDir}/scripts"
+}
+
+task copyDockerfile(type: Copy) {
+    from "./Dockerfile"
+    into "${buildDir}"
+}
+
+startScripts.dependsOn(copyConfig)
+startScripts.dependsOn(copyDockerfile)
+
 repositories {
     mavenCentral()
 }
@@ -38,15 +51,11 @@ dependencies {
     implementation 'commons-collections:commons-collections:3.2.2'
     implementation 'commons-beanutils:commons-beanutils:1.9.3'
     implementation 'commons-logging:commons-logging:1.2'
-    implementation 'net.sf.ezmorph:ezmorph:1.0.6'
-    implementation 'net.sf.json-lib:json-lib:2.4:jdk15'
-    implementation group: "com.twilio.sdk", name: "twilio", version: "7.21.5"
+//    implementation 'net.sf.ezmorph:ezmorph:1.0.6'
+//    implementation 'net.sf.json-lib:json-lib:2.4:jdk15'
     implementation 'com.zaxxer:HikariCP:3.1.0'
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.11.427'
-    implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
-    implementation 'com.rabbitmq:amqp-client:5.6.0'
     implementation 'com.google.firebase:firebase-admin:6.7.0'
 
     testImplementation 'junit:junit:4.+'
-    testCompile group: 'com.h2database', name: 'h2', version: '1.4.197'
 }
