@@ -49,7 +49,7 @@ deploy:
     - "#!/bin/bash"
     - sudo docker stop wapy-backend || true
     - sudo docker rm wapy-backend || true
-    - sudo docker run --name wapy-backend -p 8080:8080 -dit registry.gitlab.com/tony.z.1711/wapy-backend:$CI_COMMIT_TAG
+    - sudo docker run --name wapy-backend -p 80:8080 -dit registry.gitlab.com/tony.z.1711/wapy-backend:$CI_COMMIT_TAG
     - sudo docker system prune -f
     - EOF
     - chmod +x deploy.sh
