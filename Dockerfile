@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk8:jre
+FROM frolvlad/alpine-java:jdk8-slim
 COPY distributions/*.zip /wapy/wapy.zip
 WORKDIR /wapy
 RUN ls -la
