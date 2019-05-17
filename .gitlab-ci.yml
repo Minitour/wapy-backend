@@ -1,7 +1,7 @@
 stages:
   - build-source
   - docker-image
-#  - deploy2aws
+  - deploy2aws
 
 compile:
   image: adoptopenjdk/openjdk8:latest
@@ -32,15 +32,27 @@ dockerize:
   only:
     - tags
 
-#deploy:
-#  stage: deploy2aws
-#  image: lwolf/helm-kubectl-docker:v1103_291
-#  before_script:
-#    - echo ${kube_config} | base64 -d > ${KUBECONFIG}
-#    - kubectl config use-context $K8S_CLUSTER
-#  script:
-#    - cd k8s
-#    - (( echo "cat <<EOF" ; cat nbrs-backend-deployment.yml ; echo EOF ) | sh) > nbrs-backend-deployment-with-env.yml
-#    - kubectl apply -f nbrs-backend-deployment-with-env.yml
-#  only:
-#    - tags
+deploy:
+  stage: deploy2aws
+  image: alpine:3.7
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - which ssh-agent || ( apk update && apk add openssh-client )
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - cat <<EOF > deploy.sh
+    - "#!/bin/bash"
+    - sudo docker stop wapy-backend || true
+    - sudo docker rm wapy-backend || true
+    - sudo docker run --name wapy-backend -p 8080:8080 -dit tony.z.1711/wapy-backend:$CI_COMMIT_TAG
+    - sudo docker system prune -f
+    - EOF
+    - chmod +x deploy.sh
+    - ssh -T admin@$DEPLOY_HOST < deploy.sh
+  only:
+    - tags
