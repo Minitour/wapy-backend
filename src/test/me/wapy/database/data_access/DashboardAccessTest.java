@@ -87,14 +87,14 @@ public class DashboardAccessTest {
 //        }
     }
 
-    @Test
-    public void getAllProductInWindow() throws Exception {
-        String cameraId = "1";
-        List<Product> products = db.getAllProductInWindow(cameraId, start, end);
-        for (Product product : products) {
-            System.out.println(String.format("product: %s ", product.getObject_id()));
-        }
-    }
+//    @Test
+//    public void getAllProductInWindow() throws Exception {
+//        String cameraId = "1";
+//        List<Product> products = db.getAllProductInWindow(cameraId, start, end);
+//        for (Product product : products) {
+//            System.out.println(String.format("product: %s ", product.getObject_id()));
+//        }
+//    }
 
     @After
     public void tearDown() throws Exception {

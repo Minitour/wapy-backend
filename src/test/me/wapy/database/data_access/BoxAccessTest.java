@@ -19,16 +19,16 @@ public class BoxAccessTest {
     Timestamp start = Timestamp.valueOf("2019-01-19 03:14:07");
     Timestamp end = Timestamp.valueOf("2019-03-19 03:14:07");
 
-    @Before
-    public void setUp() throws Exception {
-        Database.init();
-        access = new BoxAccess();
-    }
+//    @Before
+//    public void setUp() throws Exception {
+//        Database.init();
+//        access = new BoxAccess();
+//    }
 
-    @After
-    public void tearDown() throws Exception {
-        access.close();
-    }
+//    @After
+//    public void tearDown() throws Exception {
+//        access.close();
+//    }
 
 //    @Test
 //    public void getAllProductsInWindow() throws Exception {
