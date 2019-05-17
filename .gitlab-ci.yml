@@ -32,15 +32,15 @@ dockerize:
   only:
     - tags
 
-deploy:
-  stage: deploy2aws
-  image: lwolf/helm-kubectl-docker:v1103_291
-  before_script:
-    - echo ${kube_config} | base64 -d > ${KUBECONFIG}
-    - kubectl config use-context $K8S_CLUSTER
-  script:
-    - cd k8s
-    - (( echo "cat <<EOF" ; cat nbrs-backend-deployment.yml ; echo EOF ) | sh) > nbrs-backend-deployment-with-env.yml
-    - kubectl apply -f nbrs-backend-deployment-with-env.yml
-  only:
-    - tags
+#deploy:
+#  stage: deploy2aws
+#  image: lwolf/helm-kubectl-docker:v1103_291
+#  before_script:
+#    - echo ${kube_config} | base64 -d > ${KUBECONFIG}
+#    - kubectl config use-context $K8S_CLUSTER
+#  script:
+#    - cd k8s
+#    - (( echo "cat <<EOF" ; cat nbrs-backend-deployment.yml ; echo EOF ) | sh) > nbrs-backend-deployment-with-env.yml
+#    - kubectl apply -f nbrs-backend-deployment-with-env.yml
+#  only:
+#    - tags
