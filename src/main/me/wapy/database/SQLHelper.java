@@ -1,5 +1,9 @@
 package me.wapy.database;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,7 +43,7 @@ public class SQLHelper {
         int index = 1;
 
         for(Object val : args)
-        /* Handle Collection */
+            /* Handle Collection */
             if (val.getClass() == ArrayList.class) {
                 for (String v: (ArrayList<String>) val) {
                     if (isInteger(v))
@@ -85,6 +89,66 @@ public class SQLHelper {
         return data;
     }
 
+    /**
+     * read works the same way that get works except that it converts the data into JSON elements rather then list of HashMaps.
+     * Usage Example:
+     *      @code { get("SELECT * FROM USERS WHERE EMAIL = ?",email) }
+     *
+     * @param query The Query String.
+     * @param args The arguments sent to the query.
+     * @return JsonArray containing the result.
+     * @throws SQLException
+     */
+    public JsonArray read(String query, Object... args) throws SQLException {
+        // create prepared statement
+        PreparedStatement statement = connection.prepareStatement(query);
+        Gson gson = new Gson();
+
+        int index = 1;
+
+        for(Object val : args)
+            statement.setObject(index++, val);
+
+        //Execute query and get result set
+        ResultSet set = statement.executeQuery();
+
+        // create array to store column names
+        String[] columns = new String[set.getMetaData().getColumnCount()];
+
+        // get column names
+        for (int i = 1; i <= columns.length; i++ )
+            columns[i - 1] = set.getMetaData().getColumnLabel(i);
+
+        JsonArray array = new JsonArray();
+
+        while (set.next()){
+            JsonObject object = new JsonObject();
+            for (String column : columns) {
+                if ($testMode) {
+                    object.add(column.toLowerCase(),
+                            gson.toJsonTree(set.getObject(column)));
+                } else {
+                    object.add(column,
+                            gson.toJsonTree(set.getObject(column)));
+                }
+            }
+            array.add(object);
+        }
+
+        try{
+            //close result set
+            if(!set.isClosed())
+                set.close();
+
+            if(!statement.isClosed())
+                statement.close();
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+        return array;
+    }
 
     @SuppressWarnings("Do not use this method unless you are in the testing environment!")
     public boolean raw(String query) throws SQLException {
@@ -182,6 +246,124 @@ public class SQLHelper {
         return insert(object.db_table(),object.db_columns());
     }
 
+    /**]
+     * Inserts multiple DBObjects of the same type into the database with a single query.
+     *
+     * @param entries The objects to insert. Must be of the same type.
+     * @throws SQLException
+     */
+    public void insertMany(List<DBObject> entries) throws SQLException {
+        if(entries.isEmpty()) {
+            return;
+        }
+        DBObject first = entries.get(0);
+        String tableName = first.db_table();
+
+        List<Column[]> columns = new ArrayList<>();
+
+        for (DBObject entry : entries) {
+            columns.add(entry.db_columns());
+        }
+
+        insertMany(tableName,columns);
+    }
+
+    /***
+     * This method is used to insert multiple entries of the same type into a table with a single query.
+     *
+     * @param table The name of the table.
+     * @param entries A list of columns.
+     * @throws SQLException
+     */
+    public void insertMany(String table, List<Column[]> entries) throws SQLException {
+
+        if(entries.isEmpty()) {
+            return;
+        }
+
+        Column[] values = entries.get(0);
+
+        PreparedStatement statement = null;
+
+        try {
+            // create field names builder. will contain
+            StringBuilder fieldNamesBuilder = new StringBuilder();
+
+            // create template builder. will contain "(?,?,?),"
+            StringBuilder templateBuilder = new StringBuilder();
+
+            for (int i = 0; i < values.length; i++) {
+                boolean isLast = i == values.length - 1;
+
+                Column value = values[i];
+
+                if (value.shouldIgnore()) {
+                    fieldNamesBuilder.append(value.getKey());
+                    templateBuilder.append("?");
+
+                    if(!isLast) {
+                        fieldNamesBuilder.append(",");
+                        templateBuilder.append(",");
+                    }
+                }
+            }
+
+            //fieldNameBuilder = "key1,key2,key3"
+
+            templateBuilder.insert(0,"(");
+            templateBuilder.append("),");
+
+            // templateBuilder = "(?,?,?),"
+
+
+            for (int i = 1; i < entries.size(); i++) {
+                Column[] columns = entries.get(i);
+
+                templateBuilder.append("("); //  "(?,?,?),("
+
+                for (int i1 = 0; i1 < columns.length; i1++) {
+                    boolean isLast = i1 == columns.length - 1;
+
+                    Column value = columns[i1];
+
+                    if (value.shouldIgnore()) {
+                        templateBuilder.append("?");
+
+                        if (!isLast) {
+                            templateBuilder.append(",");
+                        }
+                    }
+                }
+
+
+                templateBuilder.append("),"); //  "(?,?,?),(?,?,?),"
+            }
+
+            // remove comma at the end.
+            templateBuilder.deleteCharAt(templateBuilder.length() - 1);
+
+            // create query string
+            String query = String.format(
+                    "INSERT INTO %s (%s) VALUES %s;",
+                    table,
+                    fieldNamesBuilder.toString(),
+                    templateBuilder.toString()
+            );
+
+            statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+
+            int index = 1;
+            for (Column[] entry : entries)
+                for (Column obj : entry)
+                    if (obj.shouldIgnore())
+                        statement.setObject(index++, obj.getValue());
+
+
+            statement.executeUpdate();
+        }finally {
+            if (statement != null && !statement.isClosed()) statement.close();
+        }
+    }
 
     /**
      * Use this method to update an existing entry.
@@ -242,7 +424,7 @@ public class SQLHelper {
      * @param values The values.
      * @throws SQLException
      */
-    private boolean delete(String table, String where, Object... values) throws SQLException{
+    public boolean delete(String table, String where, Object... values) throws SQLException{
 
         PreparedStatement statement = null;
 
@@ -291,6 +473,39 @@ public class SQLHelper {
         delete(table, where.replace("#", builder.toString()), values);
     }
 
+    public void beginTransaction(TransactionCallback callback) throws SQLException {
+
+        // store current auto commit state to restore it later.
+        boolean isAutoCommit = connection.getAutoCommit();
+
+        SQLException thrownException = null;
+
+        connection.setAutoCommit(false);
+        try {
+            // perform sql operations
+            callback.beginTransaction(this);
+
+            // commit changes if exception was not thrown.
+            connection.commit();
+
+        }
+        catch (SQLException e1){
+            thrownException = e1;
+            connection.rollback();
+        }
+        catch (Exception e){
+            connection.rollback();
+        } finally {
+
+            // restore connection to original state.
+            connection.setAutoCommit(isAutoCommit);
+
+            // throw exception
+            if (thrownException != null)
+                throw thrownException;
+        }
+    }
+
     /**
      * this method checks if the string was integer
      * @param input
@@ -308,4 +523,10 @@ public class SQLHelper {
             return false;
         }
     }
+
+    @FunctionalInterface
+    public interface TransactionCallback {
+        void beginTransaction(SQLHelper sql) throws SQLException;
+    }
+
 }
