@@ -39,7 +39,8 @@ public class Main {
         String[] variables = {
                 "WAPY_JDBC_URL",
                 "WAPY_JDBC_USERNAME",
-                "WAPY_JDBC_PASSWORD"
+                "WAPY_JDBC_PASSWORD",
+                "WAPY_JWT_SECRET"
         };
 
         for (String variableName : variables) {

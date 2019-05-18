@@ -16,11 +16,44 @@ import spark.Route;
 @FunctionalInterface
 public interface RESTRoute extends Route {
 
+    String secret = System.getenv("WAPY_JWT_SECRET");
+
     @Override
     default Object handle(Request request, Response response) {
         response.header("Content-Type", "application/json");
+
+        // CHECK SECRET KEY
+        if (isProtected()) {
+
+            // Get secret from header.
+            final String jwtSecretHeader = request.headers("secret");
+
+            // if secret is not included, return error.
+            if (jwtSecretHeader == null)
+                return ErrorCode.NO_PERMISSION.toJsonResponse();
+
+            // Check if secret is valid
+            if (!jwtSecretHeader.equals(secret)) {
+                return ErrorCode.INVALID_CONTEXT.toJsonResponse();
+            }
+        }
+
         try {
-            return handle(request, response, new Gson().fromJson(request.body(), JsonObject.class));
+
+            // extract body
+            JsonObject body;
+            try {
+                body = new Gson().fromJson(request.body(), JsonObject.class);
+            }catch (Exception ignored){
+                body = new JsonObject();
+            }
+
+            // send to handler
+            return handle(
+                    request,
+                    response,
+                    body
+            );
         }
         catch (MissingParametersException e){
             return ErrorCode
@@ -69,6 +102,10 @@ public interface RESTRoute extends Route {
         } catch (NullPointerException e) {
             return null;
         }
+    }
+
+    default boolean isProtected() {
+        return true;
     }
 
     /**
