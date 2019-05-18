@@ -1,15 +1,18 @@
 package me.wapy;
 
+import com.google.gson.JsonObject;
 import me.wapy.controllers.BoxController;
 import me.wapy.controllers.DashboardController;
 import me.wapy.controllers.ProductController;
 import me.wapy.database.Database;
+import me.wapy.utils.Config;
+import me.wapy.utils.JSONResponse;
 import me.wapy.utils.JSONTransformer;
 import me.wapy.utils.RESTRoute;
+import spark.Request;
+import spark.Response;
 
-
-import static spark.Spark.port;
-import static spark.Spark.post;
+import static spark.Spark.*;
 
 /**
  * Created by Antonio Zaitoun on 21/03/2019.
@@ -24,11 +27,43 @@ public class Main {
         // init database
         Database.init();
 
+        port(Config.main.get("port").getAsInt());
+
+        // setup redirect
+        get("/", new RESTRoute() {
+            @Override
+            public Object handle(Request request, Response response, JsonObject body) {
+                response.redirect("https://wapy.me");
+                return "";
+            }
+
+            @Override
+            public boolean isProtected() {
+                return false;
+            }
+        });
+
+        // engine status
+        get("/status","application/json", new RESTRoute() {
+            @Override
+            public Object handle(Request request, Response response, JsonObject body) {
+                return JSONResponse.SUCCESS();
+            }
+
+            @Override
+            public boolean isProtected() {
+                return false;
+            }
+        },new JSONTransformer());
+
+
+
         //TODO: add controllers
-        port(8080);
         make("/dashboard", new DashboardController());
         make("/product/:id", new ProductController());
         make("/box/:id", new BoxController());
+
+
     }
 
     public static void make(String route, RESTRoute controller) {

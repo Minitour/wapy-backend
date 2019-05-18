@@ -1,7 +1,5 @@
 {
   "port" : 8080,
-  "twilio_sid" : "",
-  "twilio_token" : "",
   "aws_access_key_id" : "",
   "aws_secret_access_key" : "",
   "aws_bucket_region" : "",
