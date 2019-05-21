@@ -49,6 +49,11 @@ public class BoxController implements RESTRoute {
 
         JsonObject jsonBuilder = new JsonObject();
 
+        // init the three arrays for stats, graphs, tables
+        JsonArray statsObject = new JsonArray();
+        JsonArray graphsObject = new JsonArray();
+        JsonArray tablesObject = new JsonArray();
+
         try(BoxAccess access = new BoxAccess()) {
 
             // ---------------------------------------------------------------//
@@ -62,7 +67,7 @@ public class BoxController implements RESTRoute {
             }
 
             // adding to the json builder
-            jsonBuilder.add("products_in_window", jsonProducts);
+            tablesObject.add(jsonProducts);
 
 
             // ---------------------------------------------------------------//
@@ -70,50 +75,92 @@ public class BoxController implements RESTRoute {
             // ---------------------------------------------------------------//
             Product product = access.getMostViewedProductInWindow(owner_uid, fromTime, toTime);
 
-            if (product != null) {
-                JsonObject jsonProduct = new JsonObject();
-                jsonProduct.addProperty("product_name", product.getObject_id());
-                jsonProduct.addProperty("value", product.getValue());
-                jsonBuilder.add("most_viewed_product",jsonProduct);
-            }
+            JsonObject productObject = new JsonObject();
+            Long productValue = 0L;
+            if (product != null)
+                productValue = product.getValue();
 
+            productObject.addProperty("title", "Most Viewed Product");
+            productObject.addProperty("value", productValue);
+            productObject.addProperty("icon", "#172b4d");
+            productObject.addProperty("iconBgColor", "#172b4d");
+            productObject.addProperty("iconColor", "#172b4d");
+            productObject.addProperty("diffValue", "");
+            productObject.addProperty("isPositive", true);
+            productObject.addProperty("footerText", "");
+            productObject.addProperty("showFooter", false);
+
+            statsObject.add(productObject);
 
             // ---------------------------------------------------------------//
             //  getting least viewed product in window
             // ---------------------------------------------------------------//
             Product product1 = access.getLeastViewedProductInWindow(owner_uid, fromTime, toTime);
 
-            if (product1 != null) {
-                JsonObject jsonProduct = new JsonObject();
-                jsonProduct.addProperty("product_name", product1.getObject_id());
-                jsonProduct.addProperty("value", product1.getValue());
-                jsonBuilder.add("least_viewed_product",jsonProduct);
-            }
+            JsonObject product1Object = new JsonObject();
+            Long product1Value = 0L;
+            if (product1 != null)
+                product1Value = product1.getValue();
+
+            product1Object.addProperty("title", "Least Viewed Product");
+            product1Object.addProperty("value", product1Value);
+            product1Object.addProperty("icon", "#172b4d");
+            product1Object.addProperty("iconBgColor", "#172b4d");
+            product1Object.addProperty("iconColor", "#172b4d");
+            product1Object.addProperty("diffValue", "");
+            product1Object.addProperty("isPositive", true);
+            product1Object.addProperty("footerText", "");
+            product1Object.addProperty("showFooter", false);
+
+            statsObject.add(product1Object);
             /*
                 response will look like:
                 {
                     "box": {
-                        "products_in_window": [
-                            "product1",
-                            "product2"
+                        "tables":[
+                            [
+                                "product1",
+                                "product2"
+                            ]
                         ],
-                        "most_viewed_product": {
-                            "product_name": "",
-                            "value": ""
-                        },
-                        "least_viewed_product": {
-                            "product_name": "",
-                            "value": ""
-                        }
+                        "stats": [
+                            {
+                                "title": "Most Viewed Product",
+                                "value": "string",
+                                "icon": "string",
+                                "iconBgColor": "string",
+                                "iconColor": "string",
+                                "diffValue": "",
+                                "isPositive": true,
+                                "footerText": "",
+                                "showFooter": false
+                            },
+                            {
+                                "title": "Least Viewed Product",
+                                "value": "string",
+                                "icon": "string",
+                                "iconBgColor": "string",
+                                "iconColor": "string",
+                                "diffValue": "",
+                                "isPositive": true,
+                                "footerText": "",
+                                "showFooter": false
+                            }
+                        ],
+                        "graphs": []
                     }
                 }
              */
 
+            jsonBuilder.add("stats", statsObject);
+            jsonBuilder.add("graphs", graphsObject);
+            jsonBuilder.add("tables", tablesObject);
+
             JsonObject jsonResponse = new JsonObject();
             jsonResponse.add("box", jsonBuilder);
 
-        }
+            return JSONResponse.SUCCESS().data(jsonResponse);
 
-        return null;
+        }
     }
 }
