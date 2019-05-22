@@ -54,7 +54,13 @@ public class DashboardController implements RESTRoute {
         if (owner_uid.equals("") || fromTime == null || toTime == null)
             return JSONResponse.FAILURE().message("missing parameters");
 
+        // init the json builder to wrap the three objects (stats, graphs, tables)
         JsonObject jsonBuilder = new JsonObject();
+
+        // init the three arrays for stats, graphs, tables
+        JsonArray statsObject = new JsonArray();
+        JsonArray graphsObject = new JsonArray();
+        JsonArray tablesObject = new JsonArray();
 
         try(DashboardAccess access = new DashboardAccess()) {
 
@@ -65,9 +71,11 @@ public class DashboardController implements RESTRoute {
             // getting the traffic
             Long counter = access.getTraffic(fromTime, toTime);
 
-            // adding the traffic number to the json response
+            JsonObject trafficObject = getProductAsJson("Traffic", null, counter, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+
+            // adding the traffic number to the stats array
             // will get 0 or above - no nulls
-            jsonBuilder.addProperty("traffic", counter);
+            statsObject.add(trafficObject);
 
 
             // ---------------------------------------------------------------//
@@ -77,13 +85,14 @@ public class DashboardController implements RESTRoute {
             //getting the most viewed product (according to the objects_table)
             Product most_viewed_product = access.getMostViewedProduct(fromTime, toTime);
 
-            if (most_viewed_product != null) {
-                // parsing the product for the json response
-                JsonObject jsonProduct = getProductAsJson(most_viewed_product);
+            Long most_viewed_product_value = 0L;
+            if (most_viewed_product != null)
+                most_viewed_product_value = most_viewed_product.getValue();
 
-                // append to the json response
-                jsonBuilder.add("most_viewed_product", jsonProduct);
-            }
+            JsonObject mostViewedProductObject = getProductAsJson("Most Viewed Product", null, most_viewed_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+
+            // append to the stats array
+            statsObject.add(mostViewedProductObject);
 
             // ---------------------------------------------------------------//
             //  least viewed product
@@ -92,14 +101,15 @@ public class DashboardController implements RESTRoute {
             // getting the least viewed product (according to objects_table)
             Product least_viewed_product = access.getLeastViewedProduct(fromTime, toTime);
 
+            Long least_viewed_product_value = 0L;
             // product can be null -> will not add to the json response
-            if (least_viewed_product != null) {
-                // parsing the product for the json response
-                JsonObject jsonProduct = getProductAsJson(least_viewed_product);
+            if (least_viewed_product != null)
+                least_viewed_product_value = least_viewed_product.getValue();
 
-                // append to the json response
-                jsonBuilder.add("least_viewed_product", jsonProduct);
-            }
+            JsonObject leastViewedProductObject = getProductAsJson("Least Viewed Product", null, least_viewed_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+
+            // append to the stats array
+            statsObject.add(leastViewedProductObject);
 
             // ---------------------------------------------------------------//
             //  most viewed product reaction
@@ -108,14 +118,15 @@ public class DashboardController implements RESTRoute {
             // getting the most viewed product (according to images_table)
             Product most_viewed_reaction_product = access.getMostViewedProductReaction(fromTime, toTime);
 
+            Long most_viewed_reaction_product_value = 0L;
             // product can be null -> will not add to the json response
-            if (most_viewed_reaction_product != null) {
-                // parsing the product for the json response
-                JsonObject jsonProduct = getProductAsJson(most_viewed_reaction_product);
+            if (most_viewed_reaction_product != null)
+                most_viewed_reaction_product_value = most_viewed_reaction_product.getValue();
 
-                // append to the json response
-                jsonBuilder.add("most_viewed_reaction_product", jsonProduct);
-            }
+            JsonObject mostViewedReactionProductObject = getProductAsJson("Most Viewed Product Reaction", null, most_viewed_reaction_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+
+            // append to the stats array
+            statsObject.add(mostViewedReactionProductObject);
 
             // ---------------------------------------------------------------//
             //  least viewed product reaction
@@ -124,13 +135,14 @@ public class DashboardController implements RESTRoute {
             // getting the least viewed product (according to images_table)
             Product least_viewed_reaction_product = access.getLeastViewedProductReaction(fromTime, toTime);
 
-            if (least_viewed_reaction_product != null) {
-                // parsing the product for the json response
-                JsonObject jsonProduct = getProductAsJson(least_viewed_reaction_product);
+            Long least_viewed_reaction_product_value = 0L;
+            if (least_viewed_reaction_product != null)
+                least_viewed_reaction_product_value = least_viewed_reaction_product.getValue();
 
-                // append to the json response
-                jsonBuilder.add("least_viewed_reaction_product", jsonProduct);
-            }
+            JsonObject leastViewedReactionProductObject = getProductAsJson("Least Viewed Product Reaction", null, least_viewed_reaction_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+
+            // append to the stats array
+            statsObject.add(leastViewedReactionProductObject);
 
 
             // ---------------------------------------------------------------//
@@ -168,7 +180,7 @@ public class DashboardController implements RESTRoute {
                 // construct an array of products as json array -> will append as property: products
                 JsonArray jsonProducts = new JsonArray();
                 for (Product product : productsList) {
-                    jsonProducts.add(getProductAsJson(product));
+                    //jsonProducts.add(getProductAsJson(product));
                 }
 
                 jsonBuilder.add("products_in_window", jsonProducts);
@@ -263,7 +275,9 @@ public class DashboardController implements RESTRoute {
             // adding the reactions to the json response
             jsonBuilder.add("products_reactions", jsonProductReactions);
 
-
+            jsonBuilder.add("stats", statsObject);
+            jsonBuilder.add("graphs", graphsObject);
+            jsonBuilder.add("tables", tablesObject);
             // adding the json builder for final json object that contains the dashboard data
             JsonObject jsonResponse = new JsonObject();
             jsonResponse.add("dashboard", jsonBuilder);
@@ -273,36 +287,71 @@ public class DashboardController implements RESTRoute {
 
             /*
             response will be like this:
+            "dashboard": {
+                "stats": [
+                    {
+                        "title": "Traffic",
+                        "value": "string",
+                        "icon": "string",
+                        "iconBgColor": "string",
+                        "iconColor": "string",
+                        "diffValue": "",
+                        "isPositive": true,
+                        "footerText": "",
+                        "showFooter": false
+                    },
+                    {
+                        "title": "Most Viewed Product",
+                        "value": "string",
+                        "icon": "string",
+                        "iconBgColor": "string",
+                        "iconColor": "string",
+                        "diffValue": "",
+                        "isPositive": true,
+                        "footerText": "",
+                        "showFooter": false
+                    },
+                    {
+                        "title": "Least Viewed Product",
+                        "value": "string",
+                        "icon": "string",
+                        "iconBgColor": "string",
+                        "iconColor": "string",
+                        "diffValue": "",
+                        "isPositive": true,
+                        "footerText": "",
+                        "showFooter": false
+                    },
+                    {
+                        "title": "Most Viewed Product Reaction",
+                        "value": "string",
+                        "icon": "string",
+                        "iconBgColor": "string",
+                        "iconColor": "string",
+                        "diffValue": "",
+                        "isPositive": true,
+                        "footerText": "",
+                        "showFooter": false
+                    },
+                    {
+                        "title": "Least Viewed Product Reaction",
+                        "value": "string",
+                        "icon": "string",
+                        "iconBgColor": "string",
+                        "iconColor": "string",
+                        "diffValue": "",
+                        "isPositive": true,
+                        "footerText": "",
+                        "showFooter": false
+                    }
+                ],
+                "graphs":[],
+                "tables":[]
+            }
+
+            LEFT TO FIX:
              "dashboard": {
-                    "traffic": "",
-                    "most_viewed_product": {
-                        "owner_uid" : "",
-                        "object_id" : "",
-                        "store_id" : "",
-                        "timestamp" : "",
-                        "value" : "",
-                    },
-                    "least_viewed_product": {
-                        "owner_uid" : "",
-                        "object_id" : "",
-                        "store_id" : "",
-                        "timestamp" : "",
-                        "value" : "",
-                    },
-                    "most_viewed_reaction_product": {
-                        "owner_uid" : "",
-                        "object_id" : "",
-                        "store_id" : "",
-                        "timestamp" : "",
-                        "value" : "",
-                    },
-                     "least_viewed_reaction_product": {
-                        "owner_uid" : "",
-                        "object_id" : "",
-                        "store_id" : "",
-                        "timestamp" : "",
-                        "value" : "",
-                    },
+
                     "exposure": "value",
                     "products_in_window": [
                         {
@@ -339,24 +388,37 @@ public class DashboardController implements RESTRoute {
 
     }
 
-    private JsonObject getProductAsJson(Product product) {
+    /**
+     * Return the values as a json object
+     * @param title
+     * @param strValue
+     * @param longValue
+     * @param icon
+     * @param iconBgColor
+     * @param iconColor
+     * @param diffValue
+     * @param isPositive
+     * @param footerText
+     * @param showFooter
+     * @return
+     */
+    private JsonObject getProductAsJson(String title, String strValue, Long longValue, String icon, String iconBgColor, String iconColor, Long diffValue, boolean isPositive, String footerText, boolean showFooter) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("camera_id", product.getCamera_id());
-        jsonObject.addProperty("object_id", product.getObject_id());
-        jsonObject.addProperty("store_id", product.getStore_id());
-        jsonObject.addProperty("timestamp", product.getTimestamp().toString());
-        jsonObject.addProperty("value", product.getValue());
-        return jsonObject;
+        jsonObject.addProperty("title", title);
 
-        /*
-        {
-            "camera_id" : "",
-            "object_id" : "",
-            "store_id" : "",
-            "timestamp" : "",
-            "value" : "",
-        }
-         */
+        if (strValue != null)
+            jsonObject.addProperty("value", strValue);
+        else
+            jsonObject.addProperty("value", longValue);
+
+        jsonObject.addProperty("icon", icon);
+        jsonObject.addProperty("iconBgColor", iconBgColor);
+        jsonObject.addProperty("iconColor", iconColor);
+        jsonObject.addProperty("diffValue", diffValue);
+        jsonObject.addProperty("isPositive", isPositive);
+        jsonObject.addProperty("footerText", footerText);
+        jsonObject.addProperty("showFooter", showFooter);
+        return jsonObject;
     }
 
 }

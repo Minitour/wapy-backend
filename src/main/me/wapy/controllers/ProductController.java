@@ -1,6 +1,7 @@
 package me.wapy.controllers;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import me.wapy.database.data_access.DashboardAccess;
 import me.wapy.database.data_access.ProductAccess;
@@ -62,6 +63,11 @@ public class ProductController implements RESTRoute {
 
         JsonObject jsonBuilder = new JsonObject();
 
+        // init the three arrays for stats, graphs, tables
+        JsonArray statsObject = new JsonArray();
+        JsonArray graphsObject = new JsonArray();
+        JsonArray tablesObject = new JsonArray();
+
         // ---------------------------------------------------------------//
         //  we will get all products in window
         //  if we dont have any products we will not continue to the next functions
@@ -74,7 +80,9 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             Long views = access.getTotalViewsPerProduct(camera_id, object_id, fromTime, toTime);
 
-            jsonBuilder.addProperty("views", views);
+            JsonObject viewsObject = getProductAsJson("Views", null, views, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+
+            statsObject.add(viewsObject);
 
 
             // ---------------------------------------------------------------//
@@ -82,7 +90,9 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             Long likes = access.getTotalLikesPerProduct(camera_id, object_id, fromTime, toTime);
 
-            jsonBuilder.addProperty("likes", likes);
+            JsonObject likesObject = getProductAsJson("Likes", null, likes, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+
+            statsObject.add(likesObject);
 
             // ---------------------------------------------------------------//
             //  get total smiles for product
@@ -90,22 +100,94 @@ public class ProductController implements RESTRoute {
 
             Long smiles = access.getSmilesForProduct(fromTime, toTime, object_id, camera_id);
 
-            jsonBuilder.addProperty("smiles", smiles);
+            JsonObject smilesObject = getProductAsJson("Smiles", null, smiles, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+
+            statsObject.add(smilesObject);
 
         }
 
         // construct the json to return
+        jsonBuilder.add("stats", statsObject);
+        jsonBuilder.add("graphs", graphsObject);
+        jsonBuilder.add("tables", tablesObject);
+
         JsonObject jsonResponse = new JsonObject();
-        jsonResponse.add(object_id, jsonBuilder);
+        jsonResponse.add("product", jsonBuilder);
         return JSONResponse.SUCCESS().data(jsonResponse);
 
         /*
         response will look like this:
-            "object_id_1": {
-                "views": "value",
-                "likes": "value",
-                "smiles": "value"
-            }
+            "product" {
+                "stats": [
+                    {
+                        "title": "Views",
+                        "value": "string",
+                        "icon": "string",
+                        "iconBgColor": "string",
+                        "iconColor": "string",
+                        "diffValue": "",
+                        "isPositive": true,
+                        "footerText": "",
+                        "showFooter": false
+                    },
+                    {
+                        "title": "Likes",
+                        "value": "string",
+                        "icon": "string",
+                        "iconBgColor": "string",
+                        "iconColor": "string",
+                        "diffValue": "",
+                        "isPositive": true,
+                        "footerText": "",
+                        "showFooter": false
+                    },
+                    {
+                        "title": "Smiles",
+                        "value": "string",
+                        "icon": "string",
+                        "iconBgColor": "string",
+                        "iconColor": "string",
+                        "diffValue": "",
+                        "isPositive": true,
+                        "footerText": "",
+                        "showFooter": false
+                    }
+                ],
+                "graphs": [],
+                "tables": []
         */
+    }
+
+    /**
+     * Return the values as a json object
+     * @param title
+     * @param strValue
+     * @param longValue
+     * @param icon
+     * @param iconBgColor
+     * @param iconColor
+     * @param diffValue
+     * @param isPositive
+     * @param footerText
+     * @param showFooter
+     * @return
+     */
+    private JsonObject getProductAsJson(String title, String strValue, Long longValue, String icon, String iconBgColor, String iconColor, Long diffValue, boolean isPositive, String footerText, boolean showFooter) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("title", title);
+
+        if (strValue != null)
+            jsonObject.addProperty("value", strValue);
+        else
+            jsonObject.addProperty("value", longValue);
+
+        jsonObject.addProperty("icon", icon);
+        jsonObject.addProperty("iconBgColor", iconBgColor);
+        jsonObject.addProperty("iconColor", iconColor);
+        jsonObject.addProperty("diffValue", diffValue);
+        jsonObject.addProperty("isPositive", isPositive);
+        jsonObject.addProperty("footerText", footerText);
+        jsonObject.addProperty("showFooter", showFooter);
+        return jsonObject;
     }
 }

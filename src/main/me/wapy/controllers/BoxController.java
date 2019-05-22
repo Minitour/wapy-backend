@@ -49,6 +49,11 @@ public class BoxController implements RESTRoute {
 
         JsonObject jsonBuilder = new JsonObject();
 
+        // init the three arrays for stats, graphs, tables
+        JsonArray statsObject = new JsonArray();
+        JsonArray graphsObject = new JsonArray();
+        JsonArray tablesObject = new JsonArray();
+
         try(BoxAccess access = new BoxAccess()) {
 
             // ---------------------------------------------------------------//
@@ -62,7 +67,7 @@ public class BoxController implements RESTRoute {
             }
 
             // adding to the json builder
-            jsonBuilder.add("products_in_window", jsonProducts);
+            tablesObject.add(jsonProducts);
 
 
             // ---------------------------------------------------------------//
@@ -70,50 +75,107 @@ public class BoxController implements RESTRoute {
             // ---------------------------------------------------------------//
             Product product = access.getMostViewedProductInWindow(owner_uid, fromTime, toTime);
 
-            if (product != null) {
-                JsonObject jsonProduct = new JsonObject();
-                jsonProduct.addProperty("product_name", product.getObject_id());
-                jsonProduct.addProperty("value", product.getValue());
-                jsonBuilder.add("most_viewed_product",jsonProduct);
-            }
+            Long productValue = 0L;
+            if (product != null)
+                productValue = product.getValue();
 
+            JsonObject productObject = getProductAsJson("Most Viewed Product", null, productValue, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+
+            statsObject.add(productObject);
 
             // ---------------------------------------------------------------//
             //  getting least viewed product in window
             // ---------------------------------------------------------------//
             Product product1 = access.getLeastViewedProductInWindow(owner_uid, fromTime, toTime);
 
-            if (product1 != null) {
-                JsonObject jsonProduct = new JsonObject();
-                jsonProduct.addProperty("product_name", product1.getObject_id());
-                jsonProduct.addProperty("value", product1.getValue());
-                jsonBuilder.add("least_viewed_product",jsonProduct);
-            }
+            Long product1Value = 0L;
+            if (product1 != null)
+                product1Value = product1.getValue();
+
+            JsonObject product1Object = getProductAsJson("Least Viewed Product", null, product1Value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+
+            statsObject.add(product1Object);
             /*
                 response will look like:
                 {
                     "box": {
-                        "products_in_window": [
-                            "product1",
-                            "product2"
+                        "tables":[
+                            [
+                                "product1",
+                                "product2"
+                            ]
                         ],
-                        "most_viewed_product": {
-                            "product_name": "",
-                            "value": ""
-                        },
-                        "least_viewed_product": {
-                            "product_name": "",
-                            "value": ""
-                        }
+                        "stats": [
+                            {
+                                "title": "Most Viewed Product",
+                                "value": "string",
+                                "icon": "string",
+                                "iconBgColor": "string",
+                                "iconColor": "string",
+                                "diffValue": "",
+                                "isPositive": true,
+                                "footerText": "",
+                                "showFooter": false
+                            },
+                            {
+                                "title": "Least Viewed Product",
+                                "value": "string",
+                                "icon": "string",
+                                "iconBgColor": "string",
+                                "iconColor": "string",
+                                "diffValue": "",
+                                "isPositive": true,
+                                "footerText": "",
+                                "showFooter": false
+                            }
+                        ],
+                        "graphs": []
                     }
                 }
              */
 
+            jsonBuilder.add("stats", statsObject);
+            jsonBuilder.add("graphs", graphsObject);
+            jsonBuilder.add("tables", tablesObject);
+
             JsonObject jsonResponse = new JsonObject();
             jsonResponse.add("box", jsonBuilder);
 
-        }
+            return JSONResponse.SUCCESS().data(jsonResponse);
 
-        return null;
+        }
+    }
+
+    /**
+     * Return the values as a json object
+     * @param title
+     * @param strValue
+     * @param longValue
+     * @param icon
+     * @param iconBgColor
+     * @param iconColor
+     * @param diffValue
+     * @param isPositive
+     * @param footerText
+     * @param showFooter
+     * @return
+     */
+    private JsonObject getProductAsJson(String title, String strValue, Long longValue, String icon, String iconBgColor, String iconColor, Long diffValue, boolean isPositive, String footerText, boolean showFooter) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("title", title);
+
+        if (strValue != null)
+            jsonObject.addProperty("value", strValue);
+        else
+            jsonObject.addProperty("value", longValue);
+
+        jsonObject.addProperty("icon", icon);
+        jsonObject.addProperty("iconBgColor", iconBgColor);
+        jsonObject.addProperty("iconColor", iconColor);
+        jsonObject.addProperty("diffValue", diffValue);
+        jsonObject.addProperty("isPositive", isPositive);
+        jsonObject.addProperty("footerText", footerText);
+        jsonObject.addProperty("showFooter", showFooter);
+        return jsonObject;
     }
 }
