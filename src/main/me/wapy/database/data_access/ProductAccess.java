@@ -39,14 +39,13 @@ public class ProductAccess extends Database {
      */
     public Long getTotalViewsPerProduct(String owner_uid, String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
 
-        String query = "SELECT count(*) as value FROM objects_table \n" +
-                "WHERE\n" +
-                "timestamp BETWEEN ? and ? AND object_id =? AND owner_uid=?";
+        String query = "select count(object_id) as value FROM objects_table " +
+                "WHERE (timestamp BETWEEN ? and ?) AND (object_id = ?) AND (owner_uid = ?)";
 
         // getting the results for the query
         List<Map<String, Object>> res = sql.get(
                 query,
-                fromTime, toTime, objectId, owner_uid
+                String.valueOf(fromTime), String.valueOf(toTime), objectId, owner_uid
         );
 
         // checking for validation of result

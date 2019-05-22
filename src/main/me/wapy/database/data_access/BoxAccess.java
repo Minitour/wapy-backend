@@ -158,10 +158,9 @@ public class BoxAccess extends Database {
         if (debug) {
             System.out.println(res);
         }
-        System.out.println(res);
+
         for (String emotion : emotions) {
-            Float value = (Float)res.get(0).get("value");
-            Reaction reaction = new Reaction(emotion, value.longValue());
+            Reaction reaction = new Reaction(emotion, (Long) res.get(0).get(emotion));
             allReactions.add(reaction);
         }
 

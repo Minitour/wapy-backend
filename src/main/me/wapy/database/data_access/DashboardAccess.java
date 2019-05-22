@@ -194,7 +194,7 @@ public class DashboardAccess extends Database {
 
         List<Map<String, Object>> res = sql.get(
                 query,
-                fromTime, toTime
+                String.valueOf(fromTime), String.valueOf(toTime)
         );
 
         if (res.isEmpty())
