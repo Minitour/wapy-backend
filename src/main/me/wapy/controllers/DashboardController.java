@@ -71,17 +71,7 @@ public class DashboardController implements RESTRoute {
             // getting the traffic
             Long counter = access.getTraffic(fromTime, toTime);
 
-            JsonObject trafficObject = new JsonObject();
-            trafficObject.addProperty("title", "Traffic");
-            trafficObject.addProperty("value", counter);
-            trafficObject.addProperty("icon", "#172b4d");
-            trafficObject.addProperty("iconBgColor", "#172b4d");
-            trafficObject.addProperty("iconColor", "#172b4d");
-            trafficObject.addProperty("diffValue", "");
-            trafficObject.addProperty("isPositive", true);
-            trafficObject.addProperty("footerText", "");
-            trafficObject.addProperty("showFooter", false);
-
+            JsonObject trafficObject = getProductAsJson("Traffic", null, counter, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             // adding the traffic number to the stats array
             // will get 0 or above - no nulls
@@ -95,20 +85,11 @@ public class DashboardController implements RESTRoute {
             //getting the most viewed product (according to the objects_table)
             Product most_viewed_product = access.getMostViewedProduct(fromTime, toTime);
 
-            JsonObject mostViewedProductObject = new JsonObject();
             Long most_viewed_product_value = 0L;
             if (most_viewed_product != null)
                 most_viewed_product_value = most_viewed_product.getValue();
 
-            mostViewedProductObject.addProperty("title", "Most Viewed Product");
-            mostViewedProductObject.addProperty("value", most_viewed_product_value);
-            mostViewedProductObject.addProperty("icon", "#172b4d");
-            mostViewedProductObject.addProperty("iconBgColor", "#172b4d");
-            mostViewedProductObject.addProperty("iconColor", "#172b4d");
-            mostViewedProductObject.addProperty("diffValue", "");
-            mostViewedProductObject.addProperty("isPositive", true);
-            mostViewedProductObject.addProperty("footerText", "");
-            mostViewedProductObject.addProperty("showFooter", false);
+            JsonObject mostViewedProductObject = getProductAsJson("Most Viewed Product", null, most_viewed_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(mostViewedProductObject);
@@ -120,21 +101,12 @@ public class DashboardController implements RESTRoute {
             // getting the least viewed product (according to objects_table)
             Product least_viewed_product = access.getLeastViewedProduct(fromTime, toTime);
 
-            JsonObject leastViewedProductObject = new JsonObject();
             Long least_viewed_product_value = 0L;
             // product can be null -> will not add to the json response
             if (least_viewed_product != null)
                 least_viewed_product_value = least_viewed_product.getValue();
 
-            leastViewedProductObject.addProperty("title", "Least Viewed Product");
-            leastViewedProductObject.addProperty("value", least_viewed_product_value);
-            leastViewedProductObject.addProperty("icon", "#172b4d");
-            leastViewedProductObject.addProperty("iconBgColor", "#172b4d");
-            leastViewedProductObject.addProperty("iconColor", "#172b4d");
-            leastViewedProductObject.addProperty("diffValue", "");
-            leastViewedProductObject.addProperty("isPositive", true);
-            leastViewedProductObject.addProperty("footerText", "");
-            leastViewedProductObject.addProperty("showFooter", false);
+            JsonObject leastViewedProductObject = getProductAsJson("Least Viewed Product", null, least_viewed_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(leastViewedProductObject);
@@ -146,21 +118,12 @@ public class DashboardController implements RESTRoute {
             // getting the most viewed product (according to images_table)
             Product most_viewed_reaction_product = access.getMostViewedProductReaction(fromTime, toTime);
 
-            JsonObject mostViewedReactionProductObject = new JsonObject();
             Long most_viewed_reaction_product_value = 0L;
             // product can be null -> will not add to the json response
             if (most_viewed_reaction_product != null)
                 most_viewed_reaction_product_value = most_viewed_reaction_product.getValue();
 
-            mostViewedReactionProductObject.addProperty("title", "Most Viewed Product Reaction");
-            mostViewedReactionProductObject.addProperty("value", most_viewed_reaction_product_value);
-            mostViewedReactionProductObject.addProperty("icon", "#172b4d");
-            mostViewedReactionProductObject.addProperty("iconBgColor", "#172b4d");
-            mostViewedReactionProductObject.addProperty("iconColor", "#172b4d");
-            mostViewedReactionProductObject.addProperty("diffValue", "");
-            mostViewedReactionProductObject.addProperty("isPositive", true);
-            mostViewedReactionProductObject.addProperty("footerText", "");
-            mostViewedReactionProductObject.addProperty("showFooter", false);
+            JsonObject mostViewedReactionProductObject = getProductAsJson("Most Viewed Product Reaction", null, most_viewed_reaction_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(mostViewedReactionProductObject);
@@ -172,21 +135,11 @@ public class DashboardController implements RESTRoute {
             // getting the least viewed product (according to images_table)
             Product least_viewed_reaction_product = access.getLeastViewedProductReaction(fromTime, toTime);
 
-            JsonObject leastViewedReactionProductObject = new JsonObject();
             Long least_viewed_reaction_product_value = 0L;
             if (least_viewed_reaction_product != null)
                 least_viewed_reaction_product_value = least_viewed_reaction_product.getValue();
 
-            leastViewedReactionProductObject.addProperty("title", "Least Viewed Product Reaction");
-            leastViewedReactionProductObject.addProperty("value", least_viewed_reaction_product_value);
-            leastViewedReactionProductObject.addProperty("icon", "#172b4d");
-            leastViewedReactionProductObject.addProperty("iconBgColor", "#172b4d");
-            leastViewedReactionProductObject.addProperty("iconColor", "#172b4d");
-            leastViewedReactionProductObject.addProperty("diffValue", "");
-            leastViewedReactionProductObject.addProperty("isPositive", true);
-            leastViewedReactionProductObject.addProperty("footerText", "");
-            leastViewedReactionProductObject.addProperty("showFooter", false);
-
+            JsonObject leastViewedReactionProductObject = getProductAsJson("Least Viewed Product Reaction", null, least_viewed_reaction_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(leastViewedReactionProductObject);
@@ -227,7 +180,7 @@ public class DashboardController implements RESTRoute {
                 // construct an array of products as json array -> will append as property: products
                 JsonArray jsonProducts = new JsonArray();
                 for (Product product : productsList) {
-                    jsonProducts.add(getProductAsJson(product));
+                    //jsonProducts.add(getProductAsJson(product));
                 }
 
                 jsonBuilder.add("products_in_window", jsonProducts);
@@ -435,14 +388,36 @@ public class DashboardController implements RESTRoute {
 
     }
 
-    // will be removed after updating the json response
-    private JsonObject getProductAsJson(Product product) {
+    /**
+     * Return the values as a json object
+     * @param title
+     * @param strValue
+     * @param longValue
+     * @param icon
+     * @param iconBgColor
+     * @param iconColor
+     * @param diffValue
+     * @param isPositive
+     * @param footerText
+     * @param showFooter
+     * @return
+     */
+    private JsonObject getProductAsJson(String title, String strValue, Long longValue, String icon, String iconBgColor, String iconColor, Long diffValue, boolean isPositive, String footerText, boolean showFooter) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("camera_id", product.getCamera_id());
-        jsonObject.addProperty("object_id", product.getObject_id());
-        jsonObject.addProperty("store_id", product.getStore_id());
-        jsonObject.addProperty("timestamp", product.getTimestamp().toString());
-        jsonObject.addProperty("value", product.getValue());
+        jsonObject.addProperty("title", title);
+
+        if (strValue != null)
+            jsonObject.addProperty("value", strValue);
+        else
+            jsonObject.addProperty("value", longValue);
+
+        jsonObject.addProperty("icon", icon);
+        jsonObject.addProperty("iconBgColor", iconBgColor);
+        jsonObject.addProperty("iconColor", iconColor);
+        jsonObject.addProperty("diffValue", diffValue);
+        jsonObject.addProperty("isPositive", isPositive);
+        jsonObject.addProperty("footerText", footerText);
+        jsonObject.addProperty("showFooter", showFooter);
         return jsonObject;
     }
 

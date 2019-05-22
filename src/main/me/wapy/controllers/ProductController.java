@@ -80,16 +80,7 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             Long views = access.getTotalViewsPerProduct(camera_id, object_id, fromTime, toTime);
 
-            JsonObject viewsObject = new JsonObject();
-            viewsObject.addProperty("title", "Views");
-            viewsObject.addProperty("value", views);
-            viewsObject.addProperty("icon", "#172b4d");
-            viewsObject.addProperty("iconBgColor", "#172b4d");
-            viewsObject.addProperty("iconColor", "#172b4d");
-            viewsObject.addProperty("diffValue", "");
-            viewsObject.addProperty("isPositive", true);
-            viewsObject.addProperty("footerText", "");
-            viewsObject.addProperty("showFooter", false);
+            JsonObject viewsObject = getProductAsJson("Views", null, views, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             statsObject.add(viewsObject);
 
@@ -99,16 +90,7 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             Long likes = access.getTotalLikesPerProduct(camera_id, object_id, fromTime, toTime);
 
-            JsonObject likesObject = new JsonObject();
-            likesObject.addProperty("title", "Likes");
-            likesObject.addProperty("value", likes);
-            likesObject.addProperty("icon", "#172b4d");
-            likesObject.addProperty("iconBgColor", "#172b4d");
-            likesObject.addProperty("iconColor", "#172b4d");
-            likesObject.addProperty("diffValue", "");
-            likesObject.addProperty("isPositive", true);
-            likesObject.addProperty("footerText", "");
-            likesObject.addProperty("showFooter", false);
+            JsonObject likesObject = getProductAsJson("Likes", null, likes, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             statsObject.add(likesObject);
 
@@ -118,16 +100,7 @@ public class ProductController implements RESTRoute {
 
             Long smiles = access.getSmilesForProduct(fromTime, toTime, object_id, camera_id);
 
-            JsonObject smilesObject = new JsonObject();
-            smilesObject.addProperty("title", "Smiles");
-            smilesObject.addProperty("value", smiles);
-            smilesObject.addProperty("icon", "#172b4d");
-            smilesObject.addProperty("iconBgColor", "#172b4d");
-            smilesObject.addProperty("iconColor", "#172b4d");
-            smilesObject.addProperty("diffValue", "");
-            smilesObject.addProperty("isPositive", true);
-            smilesObject.addProperty("footerText", "");
-            smilesObject.addProperty("showFooter", false);
+            JsonObject smilesObject = getProductAsJson("Smiles", null, smiles, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             statsObject.add(smilesObject);
 
@@ -183,5 +156,38 @@ public class ProductController implements RESTRoute {
                 "graphs": [],
                 "tables": []
         */
+    }
+
+    /**
+     * Return the values as a json object
+     * @param title
+     * @param strValue
+     * @param longValue
+     * @param icon
+     * @param iconBgColor
+     * @param iconColor
+     * @param diffValue
+     * @param isPositive
+     * @param footerText
+     * @param showFooter
+     * @return
+     */
+    private JsonObject getProductAsJson(String title, String strValue, Long longValue, String icon, String iconBgColor, String iconColor, Long diffValue, boolean isPositive, String footerText, boolean showFooter) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("title", title);
+
+        if (strValue != null)
+            jsonObject.addProperty("value", strValue);
+        else
+            jsonObject.addProperty("value", longValue);
+
+        jsonObject.addProperty("icon", icon);
+        jsonObject.addProperty("iconBgColor", iconBgColor);
+        jsonObject.addProperty("iconColor", iconColor);
+        jsonObject.addProperty("diffValue", diffValue);
+        jsonObject.addProperty("isPositive", isPositive);
+        jsonObject.addProperty("footerText", footerText);
+        jsonObject.addProperty("showFooter", showFooter);
+        return jsonObject;
     }
 }
