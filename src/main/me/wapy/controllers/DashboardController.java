@@ -199,34 +199,29 @@ public class DashboardController implements RESTRoute {
                 columns.add("Product");
                 columns.add("Views");
 
-                // init the columns values
-                JsonArray productValues = new JsonArray();
-                JsonArray viewsValues = new JsonArray();
+                JsonArray columnsValues = new JsonArray();
 
                 try(ProductAccess pAccess = new ProductAccess(access)) {
                     // populate the columns values
                     for (Product product : productsList) {
-
+                        JsonArray values = new JsonArray();
                         // get the product id
                         if (product.getObject_id() != null)
                             pId = product.getObject_id();
                         else
                             pId = "";
-                        productValues.add(pId);
+                        values.add(pId);
 
                         // get the views value
                         Long views = pAccess.getTotalViewsPerProduct(owner_uid, pId, fromTime, toTime);
-                        viewsValues.add(views);
+                        values.add(views);
+
+                        columnsValues.add(values);
                     }
                 }
 
-                // add the columns into one array
-                JsonArray values = new JsonArray();
-                values.add(productValues);
-                values.add(viewsValues);
-
                 // get the table as a json object
-                JsonObject productListObject = getTableAsJson("Products", "Views", columns, values);
+                JsonObject productListObject = getTableAsJson("Products", "Views", columns, columnsValues);
 
                 tablesObject.add(productListObject);
             }

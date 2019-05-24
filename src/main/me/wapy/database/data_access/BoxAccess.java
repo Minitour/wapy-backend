@@ -37,6 +37,7 @@ public class BoxAccess extends Database {
         List<Product> rawProducts = new ArrayList<>();
         try(DashboardAccess access = new DashboardAccess(this)) {
             rawProducts = access.getAllProductInWindow(owner_uid, fromTime, toTime);
+
             List<Product> products = new ArrayList<>();
             for (Product rawProduct : rawProducts) {
                 if (rawProduct.getCamera_id().equals(camera_id))
