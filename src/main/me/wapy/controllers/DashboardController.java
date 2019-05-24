@@ -1,5 +1,6 @@
 package me.wapy.controllers;
 
+import com.google.api.client.json.Json;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -13,9 +14,9 @@ import spark.Request;
 import spark.Response;
 
 import java.sql.Timestamp;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class DashboardController implements RESTRoute {
 
@@ -89,7 +90,7 @@ public class DashboardController implements RESTRoute {
             if (most_viewed_product != null)
                 most_viewed_product_value = most_viewed_product.getValue();
 
-            JsonObject mostViewedProductObject = getProductAsJson("Most Viewed Product", null, most_viewed_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject mostViewedProductObject = getProductAsJson("Most Viewed Product" , null, most_viewed_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(mostViewedProductObject);
@@ -149,10 +150,16 @@ public class DashboardController implements RESTRoute {
             //  exposure
             // ---------------------------------------------------------------//
             Long exposure = access.getExposure(fromTime, toTime);
+            List<Long> exposures = new ArrayList<>();
+            exposures.add(exposure);
 
-            // adding the exposure to the json response
-            // will get 0 and above -> no nulls
-            //jsonBuilder.addProperty("exposure", exposure);
+            JsonObject exposureObject = getInitGraphObject("line", "Exposure", false, "Exposure");
+
+            // get the data for the graph
+            exposureObject = getGraphData(exposureObject, exposures, null);
+
+            // add the graph to the json response
+            graphsObject.add(exposureObject);
 
 
             // ---------------------------------------------------------------//
@@ -160,13 +167,8 @@ public class DashboardController implements RESTRoute {
             /*
             {
                 "products": [
-                    {
-                        "owner_uid" : "",
-                        "object_id" : "",
-                        "store_id" : "",
-                        "timestamp" : "",
-                        "value" : "",
-                    }
+                    {"product_1": views},
+                    {"product_2": views}
                 ]
             }
              */
@@ -213,59 +215,12 @@ public class DashboardController implements RESTRoute {
 
 
             // ---------------------------------------------------------------//
-            // we will return the json we collected so far if we dont have a product list
-            // the next functions are dependent that there are objects in the product list
-            // ---------------------------------------------------------------//
-//            if (productsList.isEmpty()) {
-//                return JSONResponse.FAILURE().data(jsonBuilder);
-//            }
-
-
-            // ---------------------------------------------------------------//
-            // smiles per product
+            // reactions per owner
             /*
             {
-                "smiles_per_product": {
-                    "product_id_1" : "",
-                    "product_id_2" : ""
-
-                }
-            }
-             */
-            // assumption: if got here we have product list not empty
-            // ---------------------------------------------------------------//
-            JsonObject smilePerProduct = new JsonObject();
-
-//            try(ProductAccess pAccess = new ProductAccess(access)){
-//                for (Product product : productsList) {
-//                    // getting the info from the product
-//                    String product_id = product.getObject_id();
-//
-//                    // getting the smiles for the product
-//                    Long smilesForProduct = pAccess.getSmilesForProduct(fromTime, toTime, product_id, owner_uid);
-//
-//                    smilePerProduct.addProperty(product_id, smilesForProduct);
-//                }
-//
-//                // adding the smiles to the json response
-//                //jsonBuilder.add("smiles_per_product", smilePerProduct);
-//            }
-
-
-
-            // ---------------------------------------------------------------//
-            // reactions per product
-            /*
-            {
-                "products_reactions": {
-                    "product_id_1": {
-                            "sad": "value",
-                            "angry": "value"
-                     },
-                     "product_id_2": {
-                            "sad": "value",
-                            "angry": "value"
-                     }
+                "reactions": {
+                    "sad": value,
+                    "angry": value
                  }
 
             }
@@ -273,36 +228,23 @@ public class DashboardController implements RESTRoute {
             // ---------------------------------------------------------------//
 
             // getting all reactions for all products
-//            List<Map<String,List<Reaction>>> productsReactionsList = access.getReactionsPerProduct(owner_uid, fromTime, toTime);
-//
-//            // json with products and the reactions corresponding to the product
-//            JsonObject jsonProductReactions = new JsonObject();
-//
-//            for (Map<String, List<Reaction>> stringListMap : productsReactionsList) {
-//
-//                // getting the name of the product
-//                Set productName = stringListMap.keySet();
-//
-//                // getting the reactions
-//                List<Reaction> reactionsForProduct = stringListMap.get(productName.toString());
-//
-//                // convert the reactions to json object
-//                JsonObject jsonReactions = new JsonObject();
-//                for (Reaction reaction : reactionsForProduct) {
-//                    jsonReactions.addProperty(reaction.getReaction(), reaction.getValue());
-//                }
-//
-//                // adding the json with product and list of reactions as json
-//                jsonProductReactions.add(productName.toString(), jsonReactions);
-//
-//            }
+            List<Reaction> reactions = access.getReactionSummary(owner_uid, fromTime, toTime);
 
-            // adding the reactions to the json response
-            //jsonBuilder.add("products_reactions", jsonProductReactions);
+            // get the init json object with the title, header and other
+            JsonObject reactionsObject = getInitGraphObject("bar", "Reactions", false, "Reactions");
 
+            // add the data into the json object
+            reactionsObject = getGraphData(reactionsObject, null, reactions);
+
+            // append to the graphs
+            graphsObject.add(reactionsObject);
+
+
+            // adding all tables to the json response
             jsonBuilder.add("stats", statsObject);
             jsonBuilder.add("graphs", graphsObject);
             jsonBuilder.add("tables", tablesObject);
+
             // adding the json builder for final json object that contains the dashboard data
             JsonObject jsonResponse = new JsonObject();
             jsonResponse.add("dashboard", jsonBuilder);
@@ -370,39 +312,16 @@ public class DashboardController implements RESTRoute {
                         "showFooter": false
                     }
                 ],
-                "graphs":[],
+                "graphs":[
+                    {
+                        "reactions": [
+                            "sad": value,
+                            "angry": value
+                         ]
+                    }
+                ],
                 "tables":[]
             }
-
-            LEFT TO FIX:
-             "dashboard": {
-
-                    "exposure": "value",
-                    "products_in_window": [
-                        {
-                            "owner_uid" : "",
-                            "object_id" : "",
-                            "store_id" : "",
-                            "timestamp" : "",
-                            "value" : "",
-                        }
-                    ],
-                    "smiles_per_product": {
-                        "product_id_1" : "",
-                        "product_id_2" : ""
-
-                    },
-                    "products_reactions": [
-                        "product_id_1": {
-                                "sad": "value",
-                                "angry": "value"
-                         },
-                         "product_id_2": {
-                                "sad": "value",
-                                "angry": "value"
-                         }
-                     ]
-                }
              */
 
         }catch (Exception e) {
@@ -448,12 +367,116 @@ public class DashboardController implements RESTRoute {
 
     private JsonObject getTableAsJson(String title, String header, JsonArray columns, JsonArray values) {
         JsonObject tempProduct = new JsonObject();
-        tempProduct.addProperty("title", "Products");
-        tempProduct.addProperty("header", "Product");
+        tempProduct.addProperty("title", title);
+        tempProduct.addProperty("header", header);
         tempProduct.add("columns", columns);
         tempProduct.add("values", values);
 
         return tempProduct;
+    }
+
+    private JsonObject getInitGraphObject(String type, String name, boolean showLegend, String header) {
+
+        JsonObject object = new JsonObject();
+        object.addProperty("type", type);
+        object.addProperty("name", name);
+        object.addProperty("showLegend", showLegend);
+        object.addProperty("header", header);
+
+        return object;
+    }
+
+    private JsonObject getGraphData(JsonObject initObject, List<Long> longValues, List<Reaction> reactionValues){
+        JsonObject data = new JsonObject();
+        switch (initObject.get("type").getAsString()) {
+            case "line": {
+                data = getLineGraphData(longValues);
+                break;
+            }
+            case "bar": {
+                data = getBarGraphData(reactionValues);
+                break;
+            }
+            case "radar": {
+                data = getRadarGraphData();
+                break;
+            }
+            case "pie": {
+                data = getPieGraphData();
+                break;
+            }
+        }
+        initObject.add("data", data);
+        return initObject;
+    }
+
+
+    /*
+    data: [
+       {
+        x: 10,
+        y: 20
+       },
+       {
+        x: 15,
+        y: 10
+       }
+    ]
+     */
+    private JsonObject getLineGraphData(List<Long> values) {
+
+        JsonArray jsonArray = new JsonArray();
+
+        for (Long value : values) {
+
+            JsonObject xY = new JsonObject();
+
+            // get the date
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date date = new Date();
+            String dateString = dateFormat.format(date);
+
+            // add the values to fields
+            xY.addProperty("x", dateString);
+            xY.addProperty("y", value);
+
+            jsonArray.add(xY);
+        }
+
+        return getDataSetArray(jsonArray);
+    }
+
+    private JsonObject getBarGraphData(List<Reaction> reactions) {
+        JsonArray jsonArray = new JsonArray();
+        for (Reaction reaction : reactions) {
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("x", reaction.getReaction());
+            jsonObject.addProperty("y", reaction.getValue());
+
+            jsonArray.add(jsonObject);
+        }
+
+        return getDataSetArray(jsonArray);
+    }
+
+    private JsonObject getRadarGraphData() {
+        return new JsonObject();
+    }
+
+    private JsonObject getPieGraphData() {
+        return new JsonObject();
+    }
+
+    private JsonObject getDataSetArray(JsonArray arr) {
+        JsonObject wrapper = new JsonObject();
+        JsonArray dataset = new JsonArray();
+        JsonObject data = new JsonObject();
+
+        data.add("data", arr);
+        dataset.add(data);
+
+        wrapper.add("dataset", dataset);
+        return wrapper;
     }
 
 }
