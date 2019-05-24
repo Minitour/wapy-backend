@@ -13,7 +13,10 @@ import spark.Request;
 import spark.Response;
 
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class ProductController implements RESTRoute {
@@ -104,6 +107,16 @@ public class ProductController implements RESTRoute {
 
             statsObject.add(smilesObject);
 
+            // ---------------------------------------------------------------//
+            //  get all reactions for product
+            // ---------------------------------------------------------------//
+            List<Reaction> reactions = access.getProductReactionSummary(owner_uid, object_id, fromTime, toTime);
+
+            JsonObject reactionsObject = getInitGraphObject("radar", "Reactions Radar", false, "Reactions");
+
+            reactionsObject = getGraphData(reactionsObject, null, reactions);
+
+            graphsObject.add(reactionsObject);
         }
 
         // construct the json to return
@@ -189,5 +202,118 @@ public class ProductController implements RESTRoute {
         jsonObject.addProperty("footerText", footerText);
         jsonObject.addProperty("showFooter", showFooter);
         return jsonObject;
+    }
+
+    private JsonObject getInitGraphObject(String type, String name, boolean showLegend, String header) {
+
+        JsonObject object = new JsonObject();
+        object.addProperty("type", type);
+        object.addProperty("name", name);
+        object.addProperty("showLegend", showLegend);
+        object.addProperty("header", header);
+
+        return object;
+    }
+
+    private JsonObject getGraphData(JsonObject initObject, List<Long> longValues, List<Reaction> reactionValues){
+        JsonObject data = new JsonObject();
+        switch (initObject.get("type").getAsString()) {
+            case "line": {
+                data = getLineGraphData(longValues);
+                break;
+            }
+            case "bar": {
+                data = getBarGraphData(reactionValues);
+                break;
+            }
+            case "radar": {
+                data = getRadarGraphData(reactionValues);
+                break;
+            }
+            case "pie": {
+                data = getPieGraphData();
+                break;
+            }
+        }
+        initObject.add("data", data);
+        return initObject;
+    }
+
+
+    /*
+    data: [
+       {
+        x: 10,
+        y: 20
+       },
+       {
+        x: 15,
+        y: 10
+       }
+    ]
+     */
+    private JsonObject getLineGraphData(List<Long> values) {
+
+        JsonArray jsonArray = new JsonArray();
+
+        for (Long value : values) {
+
+            JsonObject xY = new JsonObject();
+
+            // get the date
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date date = new Date();
+            String dateString = dateFormat.format(date);
+
+            // add the values to fields
+            xY.addProperty("x", dateString);
+            xY.addProperty("y", value);
+
+            jsonArray.add(xY);
+        }
+
+        return getDataSetArray(jsonArray, null, "");
+    }
+
+    private JsonObject getBarGraphData(List<Reaction> reactions) {
+        JsonArray jsonArray = new JsonArray();
+        for (Reaction reaction : reactions) {
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("x", reaction.getReaction());
+            jsonObject.addProperty("y", reaction.getValue());
+
+            jsonArray.add(jsonObject);
+        }
+
+        return getDataSetArray(jsonArray, null, "");
+    }
+
+    private JsonObject getRadarGraphData(List<Reaction> reactions) {
+        JsonArray valuesArray = new JsonArray();
+        JsonArray labels = new JsonArray();
+        for (Reaction reaction : reactions) {
+            labels.add(reaction.getReaction());
+            valuesArray.add(reaction.getValue());
+        }
+
+        return getDataSetArray(valuesArray, labels, "labels");
+    }
+
+    private JsonObject getPieGraphData() {
+        return new JsonObject();
+    }
+
+    private JsonObject getDataSetArray(JsonArray arr, JsonArray additionalArr, String additionalFieldName) {
+        JsonObject wrapper = new JsonObject();
+        JsonArray dataset = new JsonArray();
+        JsonObject data = new JsonObject();
+
+        data.add("data", arr);
+        dataset.add(data);
+
+        wrapper.add("dataset", dataset);
+        if(additionalArr != null)
+            wrapper.add(additionalFieldName, additionalArr);
+        return wrapper;
     }
 }

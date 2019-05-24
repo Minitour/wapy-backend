@@ -72,7 +72,7 @@ public class DashboardController implements RESTRoute {
             // getting the traffic
             Long counter = access.getTraffic(fromTime, toTime);
 
-            JsonObject trafficObject = getProductAsJson("Traffic", null, counter, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject trafficObject = getProductAsJson("Traffic", null, null, counter, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             // adding the traffic number to the stats array
             // will get 0 or above - no nulls
@@ -90,7 +90,10 @@ public class DashboardController implements RESTRoute {
             if (most_viewed_product != null)
                 most_viewed_product_value = most_viewed_product.getValue();
 
-            JsonObject mostViewedProductObject = getProductAsJson("Most Viewed Product" , null, most_viewed_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            String pId = "";
+            if (most_viewed_product != null)
+                pId = most_viewed_product.getObject_id();
+            JsonObject mostViewedProductObject = getProductAsJson("Most Viewed Product: " + pId, pId, null, most_viewed_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(mostViewedProductObject);
@@ -107,7 +110,11 @@ public class DashboardController implements RESTRoute {
             if (least_viewed_product != null)
                 least_viewed_product_value = least_viewed_product.getValue();
 
-            JsonObject leastViewedProductObject = getProductAsJson("Least Viewed Product", null, least_viewed_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            if (least_viewed_product != null)
+                pId = least_viewed_product.getObject_id();
+            else
+                pId = "";
+            JsonObject leastViewedProductObject = getProductAsJson("Least Viewed Product: " + pId, pId,null, least_viewed_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(leastViewedProductObject);
@@ -124,7 +131,11 @@ public class DashboardController implements RESTRoute {
             if (most_viewed_reaction_product != null)
                 most_viewed_reaction_product_value = most_viewed_reaction_product.getValue();
 
-            JsonObject mostViewedReactionProductObject = getProductAsJson("Most Viewed Product Reaction", null, most_viewed_reaction_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            if (most_viewed_reaction_product != null)
+                pId = most_viewed_reaction_product.getObject_id();
+            else
+                pId = "";
+            JsonObject mostViewedReactionProductObject = getProductAsJson("Most Viewed Product Reaction: " + pId,pId, null, most_viewed_reaction_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(mostViewedReactionProductObject);
@@ -140,7 +151,11 @@ public class DashboardController implements RESTRoute {
             if (least_viewed_reaction_product != null)
                 least_viewed_reaction_product_value = least_viewed_reaction_product.getValue();
 
-            JsonObject leastViewedReactionProductObject = getProductAsJson("Least Viewed Product Reaction", null, least_viewed_reaction_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            if (least_viewed_reaction_product != null)
+                pId = least_viewed_reaction_product.getObject_id();
+            else
+                pId = "";
+            JsonObject leastViewedReactionProductObject = getProductAsJson("Least Viewed Product Reaction: " + pId,pId, null, least_viewed_reaction_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(leastViewedReactionProductObject);
@@ -193,7 +208,10 @@ public class DashboardController implements RESTRoute {
                     for (Product product : productsList) {
 
                         // get the product id
-                        String pId = product.getObject_id();
+                        if (product.getObject_id() != null)
+                            pId = product.getObject_id();
+                        else
+                            pId = "";
                         productValues.add(pId);
 
                         // get the views value
@@ -346,9 +364,11 @@ public class DashboardController implements RESTRoute {
      * @param showFooter
      * @return
      */
-    private JsonObject getProductAsJson(String title, String strValue, Long longValue, String icon, String iconBgColor, String iconColor, Long diffValue, boolean isPositive, String footerText, boolean showFooter) {
+    private JsonObject getProductAsJson(String title, String productId, String strValue, Long longValue, String icon, String iconBgColor, String iconColor, Long diffValue, boolean isPositive, String footerText, boolean showFooter) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("title", title);
+
+        jsonObject.addProperty("productId", productId);
 
         if (strValue != null)
             jsonObject.addProperty("value", strValue);
