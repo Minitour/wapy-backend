@@ -413,7 +413,7 @@ public class DashboardController implements RESTRoute {
                 break;
             }
             case "radar": {
-                data = getRadarGraphData();
+                data = getRadarGraphData(reactionValues);
                 break;
             }
             case "pie": {
@@ -458,7 +458,7 @@ public class DashboardController implements RESTRoute {
             jsonArray.add(xY);
         }
 
-        return getDataSetArray(jsonArray);
+        return getDataSetArray(jsonArray, null, "");
     }
 
     private JsonObject getBarGraphData(List<Reaction> reactions) {
@@ -471,24 +471,35 @@ public class DashboardController implements RESTRoute {
             jsonArray.add(jsonObject);
         }
 
-        return getDataSetArray(jsonArray);
+        return getDataSetArray(jsonArray, null, "");
     }
 
-    private JsonObject getRadarGraphData() {
-        return new JsonObject();
+    private JsonObject getRadarGraphData(List<Reaction> reactions) {
+        JsonArray valuesArray = new JsonArray();
+        JsonArray labels = new JsonArray();
+        for (Reaction reaction : reactions) {
+            labels.add(reaction.getReaction());
+            valuesArray.add(reaction.getValue());
+        }
+
+        return getDataSetArray(valuesArray, labels, "labels");
     }
 
     private JsonObject getPieGraphData() {
         return new JsonObject();
     }
 
-    private JsonObject getDataSetArray(JsonArray arr) {
+    private JsonObject getDataSetArray(JsonArray arr, JsonArray additionalArr, String additionalFieldName) {
         JsonObject wrapper = new JsonObject();
         JsonArray dataset = new JsonArray();
         JsonObject data = new JsonObject();
 
         data.add("data", arr);
         dataset.add(data);
+
+        if (additionalArr != null) {
+            wrapper.add(additionalFieldName, additionalArr);
+        }
 
         wrapper.add("dataset", dataset);
         return wrapper;
