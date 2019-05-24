@@ -177,13 +177,38 @@ public class DashboardController implements RESTRoute {
             // checking we have a list to append
             if (!productsList.isEmpty()) {
 
-                // construct an array of products as json array -> will append as property: products
-                JsonArray jsonProducts = new JsonArray();
-                for (Product product : productsList) {
-                    //jsonProducts.add(getProductAsJson(product));
+                // construct the columns for the table
+                JsonArray columns = new JsonArray();
+                columns.add("Product");
+                columns.add("Views");
+
+                // init the columns values
+                JsonArray productValues = new JsonArray();
+                JsonArray viewsValues = new JsonArray();
+
+                try(ProductAccess pAccess = new ProductAccess(access)) {
+                    // populate the columns values
+                    for (Product product : productsList) {
+
+                        // get the product id
+                        String pId = product.getObject_id();
+                        productValues.add(pId);
+
+                        // get the views value
+                        Long views = pAccess.getTotalViewsPerProduct(owner_uid, pId, fromTime, toTime);
+                        viewsValues.add(views);
+                    }
                 }
 
-                //jsonBuilder.add("products_in_window", jsonProducts);
+                // add the columns into one array
+                JsonArray values = new JsonArray();
+                values.add(productValues);
+                values.add(viewsValues);
+
+                // get the table as a json object
+                JsonObject productListObject = getTableAsJson("Products", "Views", columns, values);
+
+                tablesObject.add(productListObject);
             }
 
 
@@ -419,6 +444,16 @@ public class DashboardController implements RESTRoute {
         jsonObject.addProperty("footerText", footerText);
         jsonObject.addProperty("showFooter", showFooter);
         return jsonObject;
+    }
+
+    private JsonObject getTableAsJson(String title, String header, JsonArray columns, JsonArray values) {
+        JsonObject tempProduct = new JsonObject();
+        tempProduct.addProperty("title", "Products");
+        tempProduct.addProperty("header", "Product");
+        tempProduct.add("columns", columns);
+        tempProduct.add("values", values);
+
+        return tempProduct;
     }
 
 }
