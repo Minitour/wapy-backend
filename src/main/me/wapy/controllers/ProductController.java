@@ -1,5 +1,6 @@
 package me.wapy.controllers;
 
+import com.google.api.client.json.Json;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -255,7 +256,7 @@ public class ProductController implements RESTRoute {
     private JsonObject getLineGraphData(List<Long> values) {
 
         JsonArray jsonArray = new JsonArray();
-
+        JsonArray labels = new JsonArray();
         for (Long value : values) {
 
             JsonObject xY = new JsonObject();
@@ -276,16 +277,7 @@ public class ProductController implements RESTRoute {
     }
 
     private JsonObject getBarGraphData(List<Reaction> reactions) {
-        JsonArray jsonArray = new JsonArray();
-        for (Reaction reaction : reactions) {
-            JsonObject jsonObject = new JsonObject();
-            jsonObject.addProperty("x", reaction.getReaction());
-            jsonObject.addProperty("y", reaction.getValue());
-
-            jsonArray.add(jsonObject);
-        }
-
-        return getDataSetArray(jsonArray, null, "");
+        return new JsonObject();
     }
 
     private JsonObject getRadarGraphData(List<Reaction> reactions) {
@@ -309,6 +301,7 @@ public class ProductController implements RESTRoute {
         JsonObject data = new JsonObject();
 
         data.add("data", arr);
+        data.addProperty("label", "");
         dataset.add(data);
 
         wrapper.add("dataset", dataset);

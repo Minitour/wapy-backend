@@ -13,9 +13,11 @@ import me.wapy.utils.RESTRoute;
 import spark.Request;
 import spark.Response;
 
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.*;
 
 public class DashboardController implements RESTRoute {
@@ -29,8 +31,8 @@ public class DashboardController implements RESTRoute {
         body structure:
         {
             "owner_uid" : "1",
-            "fromTime": "2019-04-12 12:34:12",
-            "toTime": "2019-04-12 12:45:12"
+            "toTime": "2019-04-12 12:34:12",
+            "numberOfDays": 7
         }
 
         ## this is the minimal info we need to send the controller results
@@ -44,13 +46,21 @@ public class DashboardController implements RESTRoute {
         // get the camera id
         String owner_uid = body.has("owner_uid") ? body.get("owner_uid").getAsString() : "";
 
-        // get the from timestamp
-        String fromTimeString = body.has("fromTime") ? body.get("fromTime").getAsString() : "";
-        Timestamp fromTime = !fromTimeString.equals("") ? Timestamp.valueOf(fromTimeString) : null;
+        // get the number of days for time frame
+        Integer numberOfDays = body.has("numberOfDays") ? body.get("numberOfDays").getAsInt() : 1;
 
         // get the to timestamp
         String toTimeString = body.has("toTime") ? body.get("toTime").getAsString() : "";
         Timestamp toTime = !toTimeString.equals("") ? Timestamp.valueOf(toTimeString) : null;
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(toTime);
+        cal.add(Calendar.DATE, numberOfDays*-1);
+
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String fromTimeString = dateFormat.format(cal.getTime());
+        Timestamp fromTime = Timestamp.valueOf(fromTimeString);
+
 
         if (owner_uid.equals("") || fromTime == null || toTime == null)
             return JSONResponse.FAILURE().message("missing parameters");
@@ -171,7 +181,11 @@ public class DashboardController implements RESTRoute {
             JsonObject exposureObject = getInitGraphObject("line", "Exposure", false, "Exposure");
 
             // get the data for the graph
-            exposureObject = getGraphData(exposureObject, exposures, null);
+            exposureObject = getGraphData(exposureObject, exposures, null,"Exposure", fromTime, toTime, numberOfDays);
+
+            String titleText = "Exposure over time";
+
+            exposureObject = getOptionsForGraph(exposureObject, titleText, false);
 
             // add the graph to the json response
             graphsObject.add(exposureObject);
@@ -247,7 +261,7 @@ public class DashboardController implements RESTRoute {
             JsonObject reactionsObject = getInitGraphObject("bar", "Reactions", false, "Reactions");
 
             // add the data into the json object
-            reactionsObject = getGraphData(reactionsObject, null, reactions);
+            reactionsObject = getGraphData(reactionsObject, null, reactions, "Reactions", fromTime, toTime, numberOfDays);
 
             // append to the graphs
             graphsObject.add(reactionsObject);
@@ -401,15 +415,20 @@ public class DashboardController implements RESTRoute {
         return object;
     }
 
-    private JsonObject getGraphData(JsonObject initObject, List<Long> longValues, List<Reaction> reactionValues){
+    private JsonObject getGraphData(JsonObject initObject, List<Long> longValues, List<Reaction> reactionValues, String innerLabel, Timestamp fromTime, Timestamp toTime, Integer numberOfDays){
         JsonObject data = new JsonObject();
+        JsonArray labels = new JsonArray();
         switch (initObject.get("type").getAsString()) {
             case "line": {
-                data = getLineGraphData(longValues);
+                data = getLineGraphData(longValues, innerLabel);
+                labels = generateLineChartLabels(fromTime, toTime, numberOfDays);
+                data.add("labels", labels);
                 break;
             }
             case "bar": {
-                data = getBarGraphData(reactionValues);
+                data = getBarGraphData(reactionValues, innerLabel);
+                labels = generateBarChartLabels(reactionValues);
+                data.add("labels", labels);
                 break;
             }
             case "radar": {
@@ -438,72 +457,107 @@ public class DashboardController implements RESTRoute {
        }
     ]
      */
-    private JsonObject getLineGraphData(List<Long> values) {
+    private JsonObject getLineGraphData(List<Long> values, String innerLabel) {
 
         JsonArray jsonArray = new JsonArray();
-
         for (Long value : values) {
 
-            JsonObject xY = new JsonObject();
-
-            // get the date
-            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            Date date = new Date();
-            String dateString = dateFormat.format(date);
-
-            // add the values to fields
-            xY.addProperty("x", dateString);
-            xY.addProperty("y", value);
-
-            jsonArray.add(xY);
+            jsonArray.add(value);
         }
 
-        return getDataSetArray(jsonArray, null, "");
+        return getDataSetObject(jsonArray, innerLabel);
     }
 
-    private JsonObject getBarGraphData(List<Reaction> reactions) {
+    private JsonObject getBarGraphData(List<Reaction> reactions, String innerLabel) {
         JsonArray jsonArray = new JsonArray();
         for (Reaction reaction : reactions) {
-            JsonObject jsonObject = new JsonObject();
-            jsonObject.addProperty("x", reaction.getReaction());
-            jsonObject.addProperty("y", reaction.getValue());
-
-            jsonArray.add(jsonObject);
+            jsonArray.add(reaction.getValue());
         }
 
-        return getDataSetArray(jsonArray, null, "");
+        return getDataSetObject(jsonArray, innerLabel);
     }
 
     private JsonObject getRadarGraphData(List<Reaction> reactions) {
+        // TODO:
         JsonArray valuesArray = new JsonArray();
-        JsonArray labels = new JsonArray();
         for (Reaction reaction : reactions) {
-            labels.add(reaction.getReaction());
             valuesArray.add(reaction.getValue());
         }
 
-        return getDataSetArray(valuesArray, labels, "labels");
+        return getDataSetObject(valuesArray, "");
     }
 
     private JsonObject getPieGraphData() {
         return new JsonObject();
     }
 
-    private JsonObject getDataSetArray(JsonArray arr, JsonArray additionalArr, String additionalFieldName) {
+    private JsonObject getDataSetObject(JsonArray arr, String label) {
         JsonObject wrapper = new JsonObject();
         JsonArray dataset = new JsonArray();
         JsonObject data = new JsonObject();
 
         data.add("data", arr);
+        data.addProperty("label", label);
         dataset.add(data);
 
-        if (additionalArr != null) {
-            wrapper.add(additionalFieldName, additionalArr);
-        }
 
         wrapper.add("dataset", dataset);
         return wrapper;
     }
 
+    private JsonArray generateLineChartLabels(Timestamp fromTime,Timestamp toTime, Integer numberOfDays){
+        Long toTimeLong = toTime.getTime();
+        Long fromTimeLong = fromTime.getTime();
+
+        // get the total diff between the dates
+        Long diffTimes = toTimeLong - fromTimeLong;
+
+        // get the diff between each label
+        Long diffBetweenLabels = diffTimes / numberOfDays;
+
+        JsonArray labels = new JsonArray();
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        DateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
+        for (int i=0; i< numberOfDays; i++) {
+            Long newDate = fromTimeLong + diffBetweenLabels * i;
+            String dateString = dateFormat.format(newDate);
+            Timestamp newTimestamp = Timestamp.valueOf(dateString);
+            String newDateString = dateFormat1.format(newTimestamp);
+            labels.add(newDateString);
+        }
+
+        return labels;
+
+    }
+
+    private JsonArray generateBarChartLabels(List<Reaction> reactionValues) {
+        JsonArray labels = new JsonArray();
+        for (Reaction reactionValue : reactionValues) {
+            labels.add(reactionValue.getReaction());
+        }
+        return labels;
+    }
+
+
+    private JsonObject getOptionsForGraph(JsonObject exposureObject, String titleText, boolean displayLegend) {
+        JsonObject options = new JsonObject();
+        JsonObject legend = new JsonObject();
+        JsonObject title = new JsonObject();
+
+        if (!titleText.equals("")) {
+            title.addProperty("display", true);
+            title.addProperty("text", titleText);
+        } else {
+            title.addProperty("display", false);
+        }
+
+        legend.addProperty("display", displayLegend);
+
+        options.add("legend", legend);
+        options.add("title", title);
+
+        exposureObject.add("options", options);
+        return exposureObject;
+    }
 }
 
