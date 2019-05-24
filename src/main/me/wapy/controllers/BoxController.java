@@ -73,7 +73,7 @@ public class BoxController implements RESTRoute {
             // ---------------------------------------------------------------//
             //  getting most viewed product in window
             // ---------------------------------------------------------------//
-            Product product = access.getMostViewedProductInWindow(owner_uid, fromTime, toTime);
+            Product product = access.getMostViewedProductInWindow(owner_uid, camera_id, fromTime, toTime);
 
             Long productValue = 0L;
             if (product != null)
@@ -86,7 +86,7 @@ public class BoxController implements RESTRoute {
             // ---------------------------------------------------------------//
             //  getting least viewed product in window
             // ---------------------------------------------------------------//
-            Product product1 = access.getLeastViewedProductInWindow(owner_uid, fromTime, toTime);
+            Product product1 = access.getLeastViewedProductInWindow(owner_uid, camera_id, fromTime, toTime);
 
             Long product1Value = 0L;
             if (product1 != null)

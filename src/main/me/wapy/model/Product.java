@@ -66,4 +66,11 @@ public class Product extends DBObject{
     public void setValue(Long value) {
         this.value = value;
     }
+
+    @Override
+    public String toString(){
+        return "object_id: "+ object_id + "\n" +
+                "store_id: " + store_id + "\n" +
+                "camera_id: " + camera_id + "\n";
+    }
 }

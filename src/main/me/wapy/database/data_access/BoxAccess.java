@@ -34,9 +34,9 @@ public class BoxAccess extends Database {
      * @return
      */
     public List<Product> getAllProductsInWindow(String owner_uid, String camera_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
-
+        List<Product> rawProducts = new ArrayList<>();
         try(DashboardAccess access = new DashboardAccess(this)) {
-            List<Product> rawProducts = access.getAllProductInWindow(owner_uid, fromTime, toTime);
+            rawProducts = access.getAllProductInWindow(owner_uid, fromTime, toTime);
             List<Product> products = new ArrayList<>();
             for (Product rawProduct : rawProducts) {
                 if (rawProduct.getCamera_id().equals(camera_id))
@@ -47,7 +47,7 @@ public class BoxAccess extends Database {
         }catch (Exception e) {
             e.printStackTrace();
         }
-        return new ArrayList<>();
+        return rawProducts;
     }
 
     /**
@@ -58,21 +58,22 @@ public class BoxAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Product getMostViewedProductInWindow(String owner_uid, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getMostViewedProductInWindow(String owner_uid, String camera_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
-        String query = "SELECT count(object_id) as value, object_id \n" +
+        String query = "SELECT count(object_id) as value, object_id, timestamp, camera_id \n" +
                 "FROM objects_table \n" +
                 "WHERE timestamp BETWEEN ? and ?\n" +
-                "AND owner_uid=?\n" +
+                "AND owner_uid=? and \n" +
+                "camera_id = ? \n" +
                 "GROUP BY object_id\n" +
                 "ORDER BY value DESC\n" +
                 "LIMIT 1";
 
         List<Map<String, Object>> res = sql.get(
                 query,
-                fromTime, toTime, owner_uid
+                fromTime, toTime, owner_uid, camera_id
         );
 
         if (res.isEmpty())
@@ -94,21 +95,22 @@ public class BoxAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public Product getLeastViewedProductInWindow(String owner_uid, Timestamp fromTime, Timestamp toTime) throws SQLException {
+    public Product getLeastViewedProductInWindow(String owner_uid, String camera_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
         if (fromTime.after(toTime))
             return null;
 
         String query = "SELECT count(object_id) as value, object_id \n" +
                 "FROM objects_table \n" +
                 "WHERE timestamp BETWEEN ? and ?\n" +
-                "AND owner_uid=?\n" +
+                "AND owner_uid=? \n" +
+                "and camera_id = ? \n" +
                 "GROUP BY object_id\n" +
                 "ORDER BY value ASC\n" +
                 "LIMIT 1";
 
         List<Map<String, Object>> res = sql.get(
                 query,
-                fromTime, toTime, owner_uid
+                fromTime, toTime, owner_uid, camera_id
         );
 
         if (res.isEmpty())
