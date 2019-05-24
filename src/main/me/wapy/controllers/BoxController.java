@@ -67,16 +67,15 @@ public class BoxController implements RESTRoute {
 
             // construct the values for the columns
             JsonArray values = new JsonArray();
+
+            // construct the column values
+            JsonArray columnValues = new JsonArray();
             for (Product product : productList) {
-
                 // construct the value
-                JsonArray value = new JsonArray();
-                value.add(product.getObject_id());
-
-                // add to the values list of tha table
-                values.add(value);
-
+                columnValues.add(product.getObject_id());
             }
+            // add to the values list of tha table
+            values.add(columnValues);
 
             // get the table as json
             JsonObject jsonProducts = getTableAsJson("Products", "Products", columns, values);
@@ -114,11 +113,21 @@ public class BoxController implements RESTRoute {
                 response will look like:
                 {
                     "box": {
-                        "tables":[
-                            [
-                                "product1",
-                                "product2"
-                            ]
+                        "tables": [
+                            {
+                                "title": "Products",
+                                "header": "Product",
+                                "columns": [
+                                    "Product"
+                                ],
+                                "values": [
+                                    [
+                                        "1",
+                                        "2",
+                                        "3"
+                                    ]
+                                ]
+                            }
                         ],
                         "stats": [
                             {
