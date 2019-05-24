@@ -354,7 +354,7 @@ public class DashboardAccess extends Database {
      */
     public List<Reaction> getReactionSummary(String userId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         String[] fields = {"calm","happy","confused","disgusted","angry","sad","surprised"};
-        String template = "(select count(*) as value, '%s' as type from images_table where %s > 50 and user_id = ? and timestamp between ? and ?)";
+        String template = "(select count(*) as value, '%s' as type from images_table where %s > 50 and owner_uid = ? and timestamp between ? and ?)";
         List<Object> args = new ArrayList<>();
         StringBuilder query = new StringBuilder();
 
@@ -370,10 +370,10 @@ public class DashboardAccess extends Database {
             args.add(toTime);
 
             // append union all only if not the last entry.
-            if(i < fields.length - 2)
+            if(i < fields.length - 1)
                 query.append(" UNION ALL ");
         }
-
+        System.out.println(query.toString());
         // run the query.
         List<Map<String,Object>> rs = sql.get(query.toString(),args.toArray());
 
