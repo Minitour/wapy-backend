@@ -61,10 +61,25 @@ public class BoxController implements RESTRoute {
             // ---------------------------------------------------------------//
             List<Product> productList = access.getAllProductsInWindow(owner_uid, camera_id, fromTime, toTime);
 
-            JsonArray jsonProducts = new JsonArray();
+            // construct the columns
+            JsonArray columns = new JsonArray();
+            columns.add("Product");
+
+            // construct the values for the columns
+            JsonArray values = new JsonArray();
             for (Product product : productList) {
-                jsonProducts.add(product.getObject_id());
+
+                // construct the value
+                JsonArray value = new JsonArray();
+                value.add(product.getObject_id());
+
+                // add to the values list of tha table
+                values.add(value);
+
             }
+
+            // get the table as json
+            JsonObject jsonProducts = getTableAsJson("Products", "Products", columns, values);
 
             // adding to the json builder
             tablesObject.add(jsonProducts);
@@ -73,7 +88,7 @@ public class BoxController implements RESTRoute {
             // ---------------------------------------------------------------//
             //  getting most viewed product in window
             // ---------------------------------------------------------------//
-            Product product = access.getMostViewedProductInWindow(owner_uid, fromTime, toTime);
+            Product product = access.getMostViewedProductInWindow(owner_uid, camera_id, fromTime, toTime);
 
             Long productValue = 0L;
             if (product != null)
@@ -86,7 +101,7 @@ public class BoxController implements RESTRoute {
             // ---------------------------------------------------------------//
             //  getting least viewed product in window
             // ---------------------------------------------------------------//
-            Product product1 = access.getLeastViewedProductInWindow(owner_uid, fromTime, toTime);
+            Product product1 = access.getLeastViewedProductInWindow(owner_uid, camera_id, fromTime, toTime);
 
             Long product1Value = 0L;
             if (product1 != null)
@@ -177,5 +192,15 @@ public class BoxController implements RESTRoute {
         jsonObject.addProperty("footerText", footerText);
         jsonObject.addProperty("showFooter", showFooter);
         return jsonObject;
+    }
+
+    private JsonObject getTableAsJson(String title, String header, JsonArray columns, JsonArray values) {
+        JsonObject tempProduct = new JsonObject();
+        tempProduct.addProperty("title", "Products");
+        tempProduct.addProperty("header", "Product");
+        tempProduct.add("columns", columns);
+        tempProduct.add("values", values);
+
+        return tempProduct;
     }
 }

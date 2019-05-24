@@ -194,7 +194,7 @@ public class DashboardAccess extends Database {
 
         List<Map<String, Object>> res = sql.get(
                 query,
-                fromTime, toTime
+                String.valueOf(fromTime), String.valueOf(toTime)
         );
 
         if (res.isEmpty())
@@ -310,8 +310,8 @@ public class DashboardAccess extends Database {
      */
     public List<Product> getAllProductInWindow(String owner_uid, Timestamp fromTime, Timestamp toTime) throws SQLException {
         List<Product> products = new ArrayList<>() ;
-        String query = "SELECT object_id FROM objects_table \n" +
-                "WHERE owner_uid=? and\n" +
+        String query = "SELECT object_id, camera_id, timestamp FROM objects_table \n" +
+                "WHERE owner_uid = ? and\n" +
                 "timestamp BETWEEN ? and ?\n" +
                 "GROUP BY object_id";
 

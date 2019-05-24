@@ -152,7 +152,7 @@ public class DashboardController implements RESTRoute {
 
             // adding the exposure to the json response
             // will get 0 and above -> no nulls
-            jsonBuilder.addProperty("exposure", exposure);
+            //jsonBuilder.addProperty("exposure", exposure);
 
 
             // ---------------------------------------------------------------//
@@ -183,7 +183,7 @@ public class DashboardController implements RESTRoute {
                     //jsonProducts.add(getProductAsJson(product));
                 }
 
-                jsonBuilder.add("products_in_window", jsonProducts);
+                //jsonBuilder.add("products_in_window", jsonProducts);
             }
 
 
@@ -191,9 +191,9 @@ public class DashboardController implements RESTRoute {
             // we will return the json we collected so far if we dont have a product list
             // the next functions are dependent that there are objects in the product list
             // ---------------------------------------------------------------//
-            if (productsList.isEmpty()) {
-                return JSONResponse.FAILURE().data(jsonBuilder);
-            }
+//            if (productsList.isEmpty()) {
+//                return JSONResponse.FAILURE().data(jsonBuilder);
+//            }
 
 
             // ---------------------------------------------------------------//
@@ -211,20 +211,20 @@ public class DashboardController implements RESTRoute {
             // ---------------------------------------------------------------//
             JsonObject smilePerProduct = new JsonObject();
 
-            try(ProductAccess pAccess = new ProductAccess(access)){
-                for (Product product : productsList) {
-                    // getting the info from the product
-                    String product_id = product.getObject_id();
-
-                    // getting the smiles for the product
-                    Long smilesForProduct = pAccess.getSmilesForProduct(fromTime, toTime, product_id, owner_uid);
-
-                    smilePerProduct.addProperty(product_id, smilesForProduct);
-                }
-
-                // adding the smiles to the json response
-                jsonBuilder.add("smiles_per_product", smilePerProduct);
-            }
+//            try(ProductAccess pAccess = new ProductAccess(access)){
+//                for (Product product : productsList) {
+//                    // getting the info from the product
+//                    String product_id = product.getObject_id();
+//
+//                    // getting the smiles for the product
+//                    Long smilesForProduct = pAccess.getSmilesForProduct(fromTime, toTime, product_id, owner_uid);
+//
+//                    smilePerProduct.addProperty(product_id, smilesForProduct);
+//                }
+//
+//                // adding the smiles to the json response
+//                //jsonBuilder.add("smiles_per_product", smilePerProduct);
+//            }
 
 
 
@@ -248,32 +248,32 @@ public class DashboardController implements RESTRoute {
             // ---------------------------------------------------------------//
 
             // getting all reactions for all products
-            List<Map<String,List<Reaction>>> productsReactionsList = access.getReactionsPerProduct(owner_uid, fromTime, toTime);
-
-            // json with products and the reactions corresponding to the product
-            JsonObject jsonProductReactions = new JsonObject();
-
-            for (Map<String, List<Reaction>> stringListMap : productsReactionsList) {
-
-                // getting the name of the product
-                Set productName = stringListMap.keySet();
-
-                // getting the reactions
-                List<Reaction> reactionsForProduct = stringListMap.get(productName.toString());
-
-                // convert the reactions to json object
-                JsonObject jsonReactions = new JsonObject();
-                for (Reaction reaction : reactionsForProduct) {
-                    jsonReactions.addProperty(reaction.getReaction(), reaction.getValue());
-                }
-
-                // adding the json with product and list of reactions as json
-                jsonProductReactions.add(productName.toString(), jsonReactions);
-
-            }
+//            List<Map<String,List<Reaction>>> productsReactionsList = access.getReactionsPerProduct(owner_uid, fromTime, toTime);
+//
+//            // json with products and the reactions corresponding to the product
+//            JsonObject jsonProductReactions = new JsonObject();
+//
+//            for (Map<String, List<Reaction>> stringListMap : productsReactionsList) {
+//
+//                // getting the name of the product
+//                Set productName = stringListMap.keySet();
+//
+//                // getting the reactions
+//                List<Reaction> reactionsForProduct = stringListMap.get(productName.toString());
+//
+//                // convert the reactions to json object
+//                JsonObject jsonReactions = new JsonObject();
+//                for (Reaction reaction : reactionsForProduct) {
+//                    jsonReactions.addProperty(reaction.getReaction(), reaction.getValue());
+//                }
+//
+//                // adding the json with product and list of reactions as json
+//                jsonProductReactions.add(productName.toString(), jsonReactions);
+//
+//            }
 
             // adding the reactions to the json response
-            jsonBuilder.add("products_reactions", jsonProductReactions);
+            //jsonBuilder.add("products_reactions", jsonProductReactions);
 
             jsonBuilder.add("stats", statsObject);
             jsonBuilder.add("graphs", graphsObject);

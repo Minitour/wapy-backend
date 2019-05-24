@@ -26,14 +26,14 @@ public class ProductController implements RESTRoute {
         /*
         body structure:
         {
-            "camera_id" : "1",
+            "owner_uid" : "1",
             "fromTime": "2019-04-12 12:34:12",
             "toTime": "2019-04-12 12:45:12"
         }
 
         ## this is the minimal info we need to send the controller results
 
-        ## from the camera_id we will get all the product in window ->
+        ## from the owner_uid we will get all the product in window ->
                 can get total views per product
                 and
                 can get total likes per product
@@ -44,7 +44,7 @@ public class ProductController implements RESTRoute {
          */
 
         // get the camera id
-        String camera_id = body.has("camera_id") ? body.get("camera_id").getAsString() : "";
+        String owner_uid = body.has("owner_uid") ? body.get("owner_uid").getAsString() : "";
 
         // get the object id from the request parameters
         String object_id = request.params(":id") != null ? request.params(":id") : "";
@@ -58,7 +58,7 @@ public class ProductController implements RESTRoute {
         Timestamp toTime = !toTimeString.equals("") ? Timestamp.valueOf(toTimeString) : null;
 
         // checking for nulls
-        if (object_id.equals("") || fromTime == null || toTime == null || camera_id.equals(""))
+        if (object_id.equals("") || fromTime == null || toTime == null || owner_uid.equals(""))
             return JSONResponse.FAILURE().message("missing parameters");
 
         JsonObject jsonBuilder = new JsonObject();
@@ -78,7 +78,7 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             //  get all views per product
             // ---------------------------------------------------------------//
-            Long views = access.getTotalViewsPerProduct(camera_id, object_id, fromTime, toTime);
+            Long views = access.getTotalViewsPerProduct(owner_uid, object_id, fromTime, toTime);
 
             JsonObject viewsObject = getProductAsJson("Views", null, views, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
@@ -88,7 +88,7 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             //  get total likes per product
             // ---------------------------------------------------------------//
-            Long likes = access.getTotalLikesPerProduct(camera_id, object_id, fromTime, toTime);
+            Long likes = access.getTotalLikesPerProduct(owner_uid, object_id, fromTime, toTime);
 
             JsonObject likesObject = getProductAsJson("Likes", null, likes, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
@@ -98,7 +98,7 @@ public class ProductController implements RESTRoute {
             //  get total smiles for product
             // ---------------------------------------------------------------//
 
-            Long smiles = access.getSmilesForProduct(fromTime, toTime, object_id, camera_id);
+            Long smiles = access.getSmilesForProduct(fromTime, toTime, object_id, owner_uid);
 
             JsonObject smilesObject = getProductAsJson("Smiles", null, smiles, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
