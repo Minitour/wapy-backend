@@ -199,34 +199,29 @@ public class DashboardController implements RESTRoute {
                 columns.add("Product");
                 columns.add("Views");
 
-                // init the columns values
-                JsonArray productValues = new JsonArray();
-                JsonArray viewsValues = new JsonArray();
+                JsonArray columnsValues = new JsonArray();
 
                 try(ProductAccess pAccess = new ProductAccess(access)) {
                     // populate the columns values
                     for (Product product : productsList) {
-
+                        JsonArray values = new JsonArray();
                         // get the product id
                         if (product.getObject_id() != null)
                             pId = product.getObject_id();
                         else
                             pId = "";
-                        productValues.add(pId);
+                        values.add(pId);
 
                         // get the views value
                         Long views = pAccess.getTotalViewsPerProduct(owner_uid, pId, fromTime, toTime);
-                        viewsValues.add(views);
+                        values.add(views);
+
+                        columnsValues.add(values);
                     }
                 }
 
-                // add the columns into one array
-                JsonArray values = new JsonArray();
-                values.add(productValues);
-                values.add(viewsValues);
-
                 // get the table as a json object
-                JsonObject productListObject = getTableAsJson("Products", "Views", columns, values);
+                JsonObject productListObject = getTableAsJson("Products", "Views", columns, columnsValues);
 
                 tablesObject.add(productListObject);
             }
@@ -418,7 +413,7 @@ public class DashboardController implements RESTRoute {
                 break;
             }
             case "radar": {
-                data = getRadarGraphData();
+                data = getRadarGraphData(reactionValues);
                 break;
             }
             case "pie": {
@@ -463,7 +458,7 @@ public class DashboardController implements RESTRoute {
             jsonArray.add(xY);
         }
 
-        return getDataSetArray(jsonArray);
+        return getDataSetArray(jsonArray, null, "");
     }
 
     private JsonObject getBarGraphData(List<Reaction> reactions) {
@@ -476,24 +471,35 @@ public class DashboardController implements RESTRoute {
             jsonArray.add(jsonObject);
         }
 
-        return getDataSetArray(jsonArray);
+        return getDataSetArray(jsonArray, null, "");
     }
 
-    private JsonObject getRadarGraphData() {
-        return new JsonObject();
+    private JsonObject getRadarGraphData(List<Reaction> reactions) {
+        JsonArray valuesArray = new JsonArray();
+        JsonArray labels = new JsonArray();
+        for (Reaction reaction : reactions) {
+            labels.add(reaction.getReaction());
+            valuesArray.add(reaction.getValue());
+        }
+
+        return getDataSetArray(valuesArray, labels, "labels");
     }
 
     private JsonObject getPieGraphData() {
         return new JsonObject();
     }
 
-    private JsonObject getDataSetArray(JsonArray arr) {
+    private JsonObject getDataSetArray(JsonArray arr, JsonArray additionalArr, String additionalFieldName) {
         JsonObject wrapper = new JsonObject();
         JsonArray dataset = new JsonArray();
         JsonObject data = new JsonObject();
 
         data.add("data", arr);
         dataset.add(data);
+
+        if (additionalArr != null) {
+            wrapper.add(additionalFieldName, additionalArr);
+        }
 
         wrapper.add("dataset", dataset);
         return wrapper;

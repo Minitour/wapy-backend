@@ -69,13 +69,15 @@ public class BoxController implements RESTRoute {
             JsonArray values = new JsonArray();
 
             // construct the column values
-            JsonArray columnValues = new JsonArray();
             for (Product product : productList) {
+                JsonArray columnValues = new JsonArray();
+
                 // construct the value
                 columnValues.add(product.getObject_id());
+
+                // add to the values list of tha table
+                values.add(columnValues);
             }
-            // add to the values list of tha table
-            values.add(columnValues);
 
             // get the table as json
             JsonObject jsonProducts = getTableAsJson("Products", "Products", columns, values);
