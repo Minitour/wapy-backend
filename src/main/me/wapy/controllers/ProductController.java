@@ -17,6 +17,7 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -47,19 +48,25 @@ public class ProductController implements RESTRoute {
                 can give us the reactions for product
          */
 
-        // get the camera id
         String owner_uid = body.has("owner_uid") ? body.get("owner_uid").getAsString() : "";
 
         // get the object id from the request parameters
         String object_id = request.params(":id") != null ? request.params(":id") : "";
 
-        // get the from timestamp
-        String fromTimeString = body.has("fromTime") ? body.get("fromTime").getAsString() : "";
-        Timestamp fromTime = !fromTimeString.equals("") ? Timestamp.valueOf(fromTimeString) : null;
+        // get the number of days for time frame
+        Integer numberOfDays = body.has("numberOfDays") ? body.get("numberOfDays").getAsInt() : 1;
 
         // get the to timestamp
         String toTimeString = body.has("toTime") ? body.get("toTime").getAsString() : "";
         Timestamp toTime = !toTimeString.equals("") ? Timestamp.valueOf(toTimeString) : null;
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(toTime);
+        cal.add(Calendar.DATE, numberOfDays*-1);
+
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String fromTimeString = dateFormat.format(cal.getTime());
+        Timestamp fromTime = Timestamp.valueOf(fromTimeString);
 
         // checking for nulls
         if (object_id.equals("") || fromTime == null || toTime == null || owner_uid.equals(""))

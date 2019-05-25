@@ -263,6 +263,10 @@ public class DashboardController implements RESTRoute {
             // add the data into the json object
             reactionsObject = getGraphData(reactionsObject, null, reactions, "Reactions", fromTime, toTime, numberOfDays);
 
+            String titleTextReactions = "Reactions Bar";
+
+            reactionsObject = getOptionsForGraph(reactionsObject, titleTextReactions, true);
+
             // append to the graphs
             graphsObject.add(reactionsObject);
 
@@ -546,10 +550,10 @@ public class DashboardController implements RESTRoute {
 
         if (!titleText.equals("")) {
             title.addProperty("display", true);
-            title.addProperty("text", titleText);
         } else {
             title.addProperty("display", false);
         }
+        title.addProperty("text", titleText);
 
         legend.addProperty("display", displayLegend);
 
