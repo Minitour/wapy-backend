@@ -436,16 +436,20 @@ public class DashboardController implements RESTRoute {
         JsonArray labels = new JsonArray();
         switch (initObject.get("type").getAsString()) {
             case "line": {
-                data = getLineGraphData(longValues, innerLabel);
+                JsonArray colors = new JsonArray();
+                colors.add("#0000ff");
+                data = getLineGraphData(longValues, innerLabel, colors);
                 labels = generateLineChartLabels(fromTime, toTime, numberOfDays);
                 labels.remove(0);
                 data.add("labels", labels);
                 break;
             }
             case "bar": {
-                data = getBarGraphData(reactionValues, innerLabel);
+                JsonArray colors = generateLineColors();
+                data = getBarGraphData(reactionValues, innerLabel, colors);
                 labels = generateBarChartLabels(reactionValues);
                 data.add("labels", labels);
+
                 break;
             }
             case "radar": {
@@ -474,7 +478,7 @@ public class DashboardController implements RESTRoute {
        }
     ]
      */
-    private JsonObject getLineGraphData(List<Long> values, String innerLabel) {
+    private JsonObject getLineGraphData(List<Long> values, String innerLabel, JsonArray BgColors) {
 
         JsonArray jsonArray = new JsonArray();
         for (Long value : values) {
@@ -482,39 +486,40 @@ public class DashboardController implements RESTRoute {
             jsonArray.add(value);
         }
 
-        return getDataSetObject(jsonArray, innerLabel);
+        return getDataSetObject(jsonArray, innerLabel, BgColors, "line");
     }
 
-    private JsonObject getBarGraphData(List<Reaction> reactions, String innerLabel) {
+    private JsonObject getBarGraphData(List<Reaction> reactions, String innerLabel, JsonArray BgColors) {
         JsonArray jsonArray = new JsonArray();
         for (Reaction reaction : reactions) {
             jsonArray.add(reaction.getValue());
         }
 
-        return getDataSetObject(jsonArray, innerLabel);
+        return getDataSetObject(jsonArray, innerLabel, BgColors, "bar");
     }
 
     private JsonObject getRadarGraphData(List<Reaction> reactions) {
-        // TODO:
-        JsonArray valuesArray = new JsonArray();
-        for (Reaction reaction : reactions) {
-            valuesArray.add(reaction.getValue());
-        }
-
-        return getDataSetObject(valuesArray, "");
+        // no use in dashboard
+        return new JsonObject();
     }
 
     private JsonObject getPieGraphData() {
         return new JsonObject();
     }
 
-    private JsonObject getDataSetObject(JsonArray arr, String label) {
+    private JsonObject getDataSetObject(JsonArray arr, String label, JsonArray colors, String chartType) {
         JsonObject wrapper = new JsonObject();
         JsonArray dataset = new JsonArray();
         JsonObject data = new JsonObject();
 
         data.add("data", arr);
         data.addProperty("label", label);
+
+        if (chartType.equals("line")) {
+            data.add("borderColor", colors);
+        } else
+            data.add("backgroundColor", colors);
+
         dataset.add(data);
 
 
@@ -590,5 +595,20 @@ public class DashboardController implements RESTRoute {
         return dateFormat.format(temp);
 
     }
+
+    private JsonArray generateLineColors() {
+        JsonArray colors = new JsonArray();
+
+        colors.add("#9AB900");  // calm
+        colors.add("#E8D500");  // happy
+        colors.add("#F3E62C");  // confused
+        colors.add("#3D003D");  // disgust
+        colors.add("#B90017");  // anger
+        colors.add("#0079DB");  // sad
+        colors.add("#00811E");  // surprised
+
+        return colors;
+    }
+
 }
 
