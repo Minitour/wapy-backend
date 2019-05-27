@@ -3,6 +3,7 @@ package me.wapy.controllers;
 import com.google.api.client.json.Json;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import me.wapy.database.data_access.DashboardAccess;
 import me.wapy.database.data_access.ProductAccess;
@@ -174,11 +175,22 @@ public class DashboardController implements RESTRoute {
             // ---------------------------------------------------------------//
             //  exposure
             // ---------------------------------------------------------------//
-            Long exposure = access.getExposure(fromTime, toTime);
+
             List<Long> exposures = new ArrayList<>();
-            exposures.add(exposure);
+
 
             JsonObject exposureObject = getInitGraphObject("line", "Exposure", false, "Exposure");
+
+            JsonArray labels = generateLineChartLabels(fromTime, toTime, numberOfDays);
+
+            for (int i=1; i<labels.size(); i++) {
+                String stringFromtime = formatDate(labels.get(i-1).getAsString());
+                String stringToTime = formatDate(labels.get(i).getAsString());
+                Timestamp tempFromTime = Timestamp.valueOf(stringFromtime);
+                Timestamp tempToTime = Timestamp.valueOf(stringToTime);
+                Long exposure = access.getExposure(tempFromTime, tempToTime);
+                exposures.add(exposure);
+            }
 
             // get the data for the graph
             exposureObject = getGraphData(exposureObject, exposures, null,"Exposure", fromTime, toTime, numberOfDays);
@@ -358,7 +370,7 @@ public class DashboardController implements RESTRoute {
         }catch (Exception e) {
             e.printStackTrace();
         }
-        return JSONResponse.FAILURE().message("No Traffic");
+        return JSONResponse.FAILURE().message("Error");
 
 
     }
@@ -426,6 +438,7 @@ public class DashboardController implements RESTRoute {
             case "line": {
                 data = getLineGraphData(longValues, innerLabel);
                 labels = generateLineChartLabels(fromTime, toTime, numberOfDays);
+                labels.remove(0);
                 data.add("labels", labels);
                 break;
             }
@@ -520,19 +533,26 @@ public class DashboardController implements RESTRoute {
         Long diffBetweenLabels = diffTimes / numberOfDays;
 
         JsonArray labels = new JsonArray();
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        DateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
-        for (int i=0; i< numberOfDays; i++) {
-            Long newDate = fromTimeLong + diffBetweenLabels * i;
-            String dateString = dateFormat.format(newDate);
-            Timestamp newTimestamp = Timestamp.valueOf(dateString);
-            String newDateString = dateFormat1.format(newTimestamp);
-            labels.add(newDateString);
-        }
 
+        for (int i=-1; i< numberOfDays; i++) {
+            labels.add(formatLabels(i, fromTimeLong, diffBetweenLabels));
+        }
         return labels;
 
     }
+
+    private String formatLabels(int i, Long time, Long diff) {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        DateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
+
+        Long newDate = time + diff * i;
+        String dateString = dateFormat.format(newDate);
+        Timestamp newTimestamp = Timestamp.valueOf(dateString);
+        String newDateString = dateFormat1.format(newTimestamp);
+
+        return newDateString;
+    }
+
 
     private JsonArray generateBarChartLabels(List<Reaction> reactionValues) {
         JsonArray labels = new JsonArray();
@@ -562,6 +582,13 @@ public class DashboardController implements RESTRoute {
 
         exposureObject.add("options", options);
         return exposureObject;
+    }
+
+    private String formatDate(String dateToConvert) {
+        Timestamp temp = Timestamp.valueOf(dateToConvert + " 00:00:00");
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return dateFormat.format(temp);
+
     }
 }
 
