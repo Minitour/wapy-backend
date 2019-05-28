@@ -436,9 +436,7 @@ public class DashboardController implements RESTRoute {
         JsonArray labels = new JsonArray();
         switch (initObject.get("type").getAsString()) {
             case "line": {
-                JsonArray colors = new JsonArray();
-                colors.add("#0000ff");
-                data = getLineGraphData(longValues, innerLabel, colors);
+                data = getLineGraphData(longValues, innerLabel, new JsonArray());
                 labels = generateLineChartLabels(fromTime, toTime, numberOfDays);
                 labels.remove(0);
                 data.add("labels", labels);
@@ -516,12 +514,16 @@ public class DashboardController implements RESTRoute {
         data.addProperty("label", label);
 
         if (chartType.equals("line")) {
-            data.add("borderColor", colors);
-        } else
+            data.addProperty("borderColor", "#16a085");
+            data.addProperty("backgroundColor", "transparent");
+            data.addProperty("fill", false);
+        } else {
             data.add("backgroundColor", colors);
 
-        dataset.add(data);
+        }
 
+
+        dataset.add(data);
 
         wrapper.add("dataset", dataset);
         return wrapper;
@@ -599,10 +601,10 @@ public class DashboardController implements RESTRoute {
     private JsonArray generateLineColors() {
         JsonArray colors = new JsonArray();
 
-        colors.add("#9AB900");  // calm
-        colors.add("#E8D500");  // happy
-        colors.add("#F3E62C");  // confused
-        colors.add("#3D003D");  // disgust
+        colors.add("#2ecc71");  // calm
+        colors.add("#f1c40f");  // happy
+        colors.add("#34495e");  // confused
+        colors.add("#8e44ad");  // disgust
         colors.add("#B90017");  // anger
         colors.add("#0079DB");  // sad
         colors.add("#00811E");  // surprised
