@@ -373,7 +373,6 @@ public class DashboardAccess extends Database {
             if(i < fields.length - 1)
                 query.append(" UNION ALL ");
         }
-        System.out.println(query.toString());
         // run the query.
         List<Map<String,Object>> rs = sql.get(query.toString(),args.toArray());
 
