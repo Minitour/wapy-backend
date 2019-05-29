@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import javafx.util.Pair;
 import me.wapy.database.data_access.DashboardAccess;
 import me.wapy.database.data_access.ProductAccess;
 import me.wapy.model.Product;
@@ -107,7 +108,7 @@ public class DashboardController implements RESTRoute {
             String pId = "";
             if (most_viewed_product != null)
                 pId = most_viewed_product.getObject_id();
-            JsonObject mostViewedProductObject = getProductAsJson("Most Viewed Product: " + pId, pId, null, most_viewed_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject mostViewedProductObject = getProductAsJson("Most Viewed Product: " + pId, pId, null, most_viewed_product_value, "star", "#feca57", "white", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(mostViewedProductObject);
@@ -128,7 +129,7 @@ public class DashboardController implements RESTRoute {
                 pId = least_viewed_product.getObject_id();
             else
                 pId = "";
-            JsonObject leastViewedProductObject = getProductAsJson("Least Viewed Product: " + pId, pId,null, least_viewed_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject leastViewedProductObject = getProductAsJson("Least Viewed Product: " + pId, pId,null, least_viewed_product_value, "heart-broken", "#576574", "white", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(leastViewedProductObject);
@@ -149,7 +150,7 @@ public class DashboardController implements RESTRoute {
                 pId = most_viewed_reaction_product.getObject_id();
             else
                 pId = "";
-            JsonObject mostViewedReactionProductObject = getProductAsJson("Most Viewed Product Reaction: " + pId,pId, null, most_viewed_reaction_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject mostViewedReactionProductObject = getProductAsJson("Most Viewed Product Reaction: " + pId,pId, null, most_viewed_reaction_product_value, "fire", "#f39c12", "white", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(mostViewedReactionProductObject);
@@ -169,7 +170,7 @@ public class DashboardController implements RESTRoute {
                 pId = least_viewed_reaction_product.getObject_id();
             else
                 pId = "";
-            JsonObject leastViewedReactionProductObject = getProductAsJson("Least Viewed Product Reaction: " + pId,pId, null, least_viewed_reaction_product_value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject leastViewedReactionProductObject = getProductAsJson("Least Viewed Product Reaction: " + pId,pId, null, least_viewed_reaction_product_value, "meh", "#9b59b6", "white", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(leastViewedReactionProductObject);
@@ -228,27 +229,11 @@ public class DashboardController implements RESTRoute {
                 columns.add("Product");
                 columns.add("Views");
 
-                JsonArray columnsValues = new JsonArray();
+                // get the product list as json array
+                JsonArray columnsValues = getProductListAsJsonArray(access, productsList, owner_uid, fromTime, toTime);
 
-                try(ProductAccess pAccess = new ProductAccess(access)) {
-                    // populate the columns values
-                    for (Product product : productsList) {
-                        JsonArray values = new JsonArray();
-                        // get the product id
-                        if (product.getObject_id() != null)
-                            pId = product.getObject_id();
-                        else
-                            pId = "";
-                        values.add(pId);
-
-                        // get the views value
-                        Long views = pAccess.getTotalViewsPerProduct(owner_uid, pId, fromTime, toTime);
-                        values.add(views);
-
-                        columnsValues.add(values);
-                    }
-
-                }
+                // sort the array by views
+                columnsValues = sortJsonArray(columnsValues);
 
                 // get the table as a json object
                 JsonObject productListObject = getTableAsJson("Products", "Views", columns, columnsValues);
@@ -379,6 +364,68 @@ public class DashboardController implements RESTRoute {
 
     }
 
+    private JsonArray getProductListAsJsonArray(DashboardAccess access, List<Product> productsList, String owner_uid, Timestamp fromTime, Timestamp toTime) {
+        String pId;
+        JsonArray columnsValues = new JsonArray();
+
+        try(ProductAccess pAccess = new ProductAccess(access)) {
+            for (Product product : productsList) {
+                JsonArray values = new JsonArray();
+                // get the product id
+                if (product.getObject_id() != null)
+                    pId = product.getObject_id();
+                else
+                    pId = "";
+                values.add(pId);
+
+                // get the views value
+                Long views = pAccess.getTotalViewsPerProduct(owner_uid, pId, fromTime, toTime);
+                values.add(views);
+
+                columnsValues.add(values);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return columnsValues;
+    }
+
+
+    private JsonArray sortJsonArray(JsonArray columnsValues) {
+        // transform the json array into list
+        List<Pair<String, Integer>> values = new ArrayList<>();
+        for (JsonElement columnsValue : columnsValues) {
+            Pair<String, Integer> pair = new Pair<>(columnsValue.getAsJsonArray().get(0).getAsString(), columnsValue.getAsJsonArray().get(1).getAsInt());
+            values.add(pair);
+        }
+
+        // sort the list
+        values.sort(new Comparator<Pair<String, Integer>>() {
+            @Override
+            public int compare(Pair<String, Integer> o1, Pair<String, Integer> o2) {
+                if (o1.getValue() > o2.getValue()) {
+                    return -1;
+                } else if (o1.getValue().equals(o2.getValue())) {
+                    return 0; // You can change this to make it then look at the
+                    //words alphabetical order
+                } else {
+                    return 1;
+                }
+            }
+        });
+
+        // transform back to json array
+        JsonArray newValues = new JsonArray();
+        for (Pair<String, Integer> value : values) {
+            JsonArray innerArray = new JsonArray();
+            innerArray.add(value.getKey());
+            innerArray.add(value.getValue());
+            newValues.add(innerArray);
+        }
+
+        return newValues;
+    }
 
     /**
      * Return the values as a json object
