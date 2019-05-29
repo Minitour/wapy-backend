@@ -11,9 +11,12 @@ import me.wapy.model.Product;
 import me.wapy.model.Reaction;
 import me.wapy.utils.JSONResponse;
 import me.wapy.utils.RESTRoute;
+import org.json.JSONException;
+import org.json.JSONObject;
 import spark.Request;
 import spark.Response;
 
+import java.lang.reflect.Type;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -244,6 +247,7 @@ public class DashboardController implements RESTRoute {
 
                         columnsValues.add(values);
                     }
+
                 }
 
                 // get the table as a json object
@@ -277,7 +281,7 @@ public class DashboardController implements RESTRoute {
 
             String titleTextReactions = "Reactions Bar";
 
-            reactionsObject = getOptionsForGraph(reactionsObject, titleTextReactions, true);
+            reactionsObject = getOptionsForGraph(reactionsObject, titleTextReactions, false);
 
             // append to the graphs
             graphsObject.add(reactionsObject);
@@ -374,6 +378,7 @@ public class DashboardController implements RESTRoute {
 
 
     }
+
 
     /**
      * Return the values as a json object
@@ -514,7 +519,7 @@ public class DashboardController implements RESTRoute {
         data.addProperty("label", label);
 
         if (chartType.equals("line")) {
-            data.addProperty("borderColor", "#16a085");
+            data.addProperty("borderColor", "#3498db");
             data.addProperty("backgroundColor", "transparent");
             data.addProperty("fill", false);
         } else {
@@ -564,7 +569,9 @@ public class DashboardController implements RESTRoute {
     private JsonArray generateBarChartLabels(List<Reaction> reactionValues) {
         JsonArray labels = new JsonArray();
         for (Reaction reactionValue : reactionValues) {
-            labels.add(reactionValue.getReaction());
+            String reaction = reactionValue.getReaction();
+            reaction = reaction.substring(0, 1).toUpperCase() + reaction.substring(1);
+            labels.add(reaction);
         }
         return labels;
     }
@@ -605,9 +612,9 @@ public class DashboardController implements RESTRoute {
         colors.add("#f1c40f");  // happy
         colors.add("#34495e");  // confused
         colors.add("#8e44ad");  // disgust
-        colors.add("#B90017");  // anger
+        colors.add("#e74c3c");  // anger
         colors.add("#0079DB");  // sad
-        colors.add("#00811E");  // surprised
+        colors.add("#e67e22");  // surprised
 
         return colors;
     }
