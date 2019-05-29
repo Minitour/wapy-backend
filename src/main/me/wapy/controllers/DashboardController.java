@@ -394,21 +394,24 @@ public class DashboardController implements RESTRoute {
 
     private JsonArray sortJsonArray(JsonArray columnsValues) {
         // transform the json array into list
-        List<Pair<String, Integer>> values = new ArrayList<>();
+        List<JsonObject> values = new ArrayList<>();
+        //List<Pair<String, Integer>> values = new ArrayList<>();
+
         for (JsonElement columnsValue : columnsValues) {
-            Pair<String, Integer> pair = new Pair<>(columnsValue.getAsJsonArray().get(0).getAsString(), columnsValue.getAsJsonArray().get(1).getAsInt());
+            JsonObject pair = new JsonObject();
+            pair.addProperty("key", columnsValue.getAsJsonArray().get(0).getAsString());
+            pair.addProperty("value", columnsValue.getAsJsonArray().get(1).getAsInt());
+            //Pair<String, Integer> pair = new Pair<>(columnsValue.getAsJsonArray().get(0).getAsString(), columnsValue.getAsJsonArray().get(1).getAsInt());
             values.add(pair);
         }
 
-        // sort the list
-        values.sort(new Comparator<Pair<String, Integer>>() {
+        values.sort(new Comparator<JsonObject>() {
             @Override
-            public int compare(Pair<String, Integer> o1, Pair<String, Integer> o2) {
-                if (o1.getValue() > o2.getValue()) {
+            public int compare(JsonObject o1, JsonObject o2) {
+                if (o1.get("value").getAsInt() > o2.get("value").getAsInt()) {
                     return -1;
-                } else if (o1.getValue().equals(o2.getValue())) {
-                    return 0; // You can change this to make it then look at the
-                    //words alphabetical order
+                } else if (o1.get("value").getAsInt() == o2.get("value").getAsInt()) {
+                    return 0;
                 } else {
                     return 1;
                 }
@@ -417,10 +420,10 @@ public class DashboardController implements RESTRoute {
 
         // transform back to json array
         JsonArray newValues = new JsonArray();
-        for (Pair<String, Integer> value : values) {
+        for (JsonObject value : values) {
             JsonArray innerArray = new JsonArray();
-            innerArray.add(value.getKey());
-            innerArray.add(value.getValue());
+            innerArray.add(value.get("key").getAsString());
+            innerArray.add(value.get("value").getAsInt());
             newValues.add(innerArray);
         }
 
