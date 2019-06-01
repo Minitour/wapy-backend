@@ -5,7 +5,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import javafx.util.Pair;
 import me.wapy.database.data_access.DashboardAccess;
 import me.wapy.database.data_access.ProductAccess;
 import me.wapy.model.Product;
@@ -395,13 +394,11 @@ public class DashboardController implements RESTRoute {
     private JsonArray sortJsonArray(JsonArray columnsValues) {
         // transform the json array into list
         List<JsonObject> values = new ArrayList<>();
-        //List<Pair<String, Integer>> values = new ArrayList<>();
 
         for (JsonElement columnsValue : columnsValues) {
             JsonObject pair = new JsonObject();
             pair.addProperty("key", columnsValue.getAsJsonArray().get(0).getAsString());
             pair.addProperty("value", columnsValue.getAsJsonArray().get(1).getAsInt());
-            //Pair<String, Integer> pair = new Pair<>(columnsValue.getAsJsonArray().get(0).getAsString(), columnsValue.getAsJsonArray().get(1).getAsInt());
             values.add(pair);
         }
 
