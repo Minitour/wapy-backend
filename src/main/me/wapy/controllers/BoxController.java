@@ -123,7 +123,7 @@ public class BoxController implements RESTRoute {
             if (product1 != null)
                 product1Value = product1.getValue();
 
-            JsonObject product1Object = getProductAsJson("Least Viewed Product", null, product1Value, "heart-broken", "#576574", "white", 0L, true, "", false);
+            JsonObject product1Object = getProductAsJson("Least Viewed Product", null, product1Value, "heartbeat", "#576574", "white", 0L, true, "", false);
 
             statsObject.add(product1Object);
             /*
