@@ -1,6 +1,7 @@
 package me.wapy.controllers;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import me.wapy.database.data_access.BoxAccess;
 import me.wapy.model.Product;
@@ -12,7 +13,9 @@ import spark.Response;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.List;
 
 public class BoxController implements RESTRoute {
@@ -89,6 +92,8 @@ public class BoxController implements RESTRoute {
                 values.add(columnValues);
             }
 
+            values = sortJsonArray(values);
+
             // get the table as json
             JsonObject jsonProducts = getTableAsJson("Products", "Products", columns, values);
 
@@ -105,7 +110,7 @@ public class BoxController implements RESTRoute {
             if (product != null)
                 productValue = product.getValue();
 
-            JsonObject productObject = getProductAsJson("Most Viewed Product", null, productValue, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject productObject = getProductAsJson("Most Viewed Product", null, productValue, "star", "#feca57", "white", 0L, true, "", false);
 
             statsObject.add(productObject);
 
@@ -118,7 +123,7 @@ public class BoxController implements RESTRoute {
             if (product1 != null)
                 product1Value = product1.getValue();
 
-            JsonObject product1Object = getProductAsJson("Least Viewed Product", null, product1Value, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject product1Object = getProductAsJson("Least Viewed Product", null, product1Value, "heart-broken", "#576574", "white", 0L, true, "", false);
 
             statsObject.add(product1Object);
             /*
@@ -223,5 +228,41 @@ public class BoxController implements RESTRoute {
         tempProduct.add("values", values);
 
         return tempProduct;
+    }
+
+    private JsonArray sortJsonArray(JsonArray jsonArray) {
+        // transform the json array into list
+        List<JsonObject> values = new ArrayList<>();
+
+        for (JsonElement columnsValue : jsonArray) {
+            JsonObject pair = new JsonObject();
+            pair.addProperty("key", columnsValue.getAsJsonArray().get(0).getAsString());
+            pair.addProperty("value", columnsValue.getAsJsonArray().get(1).getAsInt());
+            values.add(pair);
+        }
+
+        values.sort(new Comparator<JsonObject>() {
+            @Override
+            public int compare(JsonObject o1, JsonObject o2) {
+                if (o1.get("value").getAsString().equals(o2.get("value").getAsString())) {
+                    return -1;
+                } else if (o1.get("value").getAsInt() == o2.get("value").getAsInt()) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            }
+        });
+
+        // transform back to json array
+        JsonArray newValues = new JsonArray();
+        for (JsonObject value : values) {
+            JsonArray innerArray = new JsonArray();
+            innerArray.add(value.get("key").getAsString());
+            innerArray.add(value.get("value").getAsInt());
+            newValues.add(innerArray);
+        }
+
+        return newValues;
     }
 }

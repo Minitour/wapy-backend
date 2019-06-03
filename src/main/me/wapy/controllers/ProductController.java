@@ -1,12 +1,9 @@
 package me.wapy.controllers;
 
-import com.google.api.client.json.Json;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import me.wapy.database.data_access.DashboardAccess;
 import me.wapy.database.data_access.ProductAccess;
-import me.wapy.model.Product;
 import me.wapy.model.Reaction;
 import me.wapy.utils.JSONResponse;
 import me.wapy.utils.RESTRoute;
@@ -122,9 +119,36 @@ public class ProductController implements RESTRoute {
 
             JsonObject reactionsObject = getInitGraphObject("radar", "Reactions Radar", false, "Reactions");
 
-            reactionsObject = getGraphData(reactionsObject, null, reactions);
+            reactionsObject = getGraphData(reactionsObject, null, reactions,"Reaction", fromTime, toTime, numberOfDays);
+
+            reactionsObject = getOptionsForGraph(reactionsObject, "Product Reactions", false);
 
             graphsObject.add(reactionsObject);
+
+
+            // ---------------------------------------------------------------//
+            //  get views per time period
+            // ---------------------------------------------------------------//
+
+            JsonObject views_over_time_object = getInitGraphObject("line", "Views Over Time", false, "Views");
+            JsonArray labels = generateLineChartLabels(fromTime, toTime, numberOfDays);
+            List<Long> views_over_time = new ArrayList<>();
+
+            for (int i=1; i<labels.size(); i++) {
+                String stringFromtime = formatDate(labels.get(i-1).getAsString());
+                String stringToTime = formatDate(labels.get(i).getAsString());
+                Timestamp tempFromTime = Timestamp.valueOf(stringFromtime);
+                Timestamp tempToTime = Timestamp.valueOf(stringToTime);
+                Long exposure = access.getTotalViewsPerProduct(owner_uid, object_id, tempFromTime, tempToTime);
+                views_over_time.add(exposure);
+            }
+
+            views_over_time_object = getGraphData(views_over_time_object, views_over_time, null, "Views", fromTime, toTime, numberOfDays);
+
+            views_over_time_object = getOptionsForGraph(views_over_time_object, "Views", false);
+
+            graphsObject.add(views_over_time_object);
+
         }
 
         // construct the json to return
@@ -223,11 +247,15 @@ public class ProductController implements RESTRoute {
         return object;
     }
 
-    private JsonObject getGraphData(JsonObject initObject, List<Long> longValues, List<Reaction> reactionValues){
+    private JsonObject getGraphData(JsonObject initObject, List<Long> longValues, List<Reaction> reactionValues, String innerLabel, Timestamp fromTime, Timestamp toTime, Integer numberOfDays){
         JsonObject data = new JsonObject();
+        JsonArray labels = new JsonArray();
         switch (initObject.get("type").getAsString()) {
             case "line": {
-                data = getLineGraphData(longValues);
+                data = getLineGraphData(longValues, innerLabel, new JsonArray());
+                labels = generateLineChartLabels(fromTime, toTime, numberOfDays);
+                labels.remove(0);
+                data.add("labels", labels);
                 break;
             }
             case "bar": {
@@ -235,7 +263,11 @@ public class ProductController implements RESTRoute {
                 break;
             }
             case "radar": {
-                data = getRadarGraphData(reactionValues);
+                JsonArray colors = new JsonArray();
+                System.out.println("got Here");
+                labels = generateRadarLabels(reactionValues);
+                data = getRadarGraphData(reactionValues, colors);
+                data.add("labels", labels);
                 break;
             }
             case "pie": {
@@ -260,7 +292,7 @@ public class ProductController implements RESTRoute {
        }
     ]
      */
-    private JsonObject getLineGraphData(List<Long> values) {
+    private JsonObject getLineGraphData(List<Long> values, String innerLabel, JsonArray BgColors) {
 
         JsonArray jsonArray = new JsonArray();
         JsonArray labels = new JsonArray();
@@ -280,40 +312,127 @@ public class ProductController implements RESTRoute {
             jsonArray.add(xY);
         }
 
-        return getDataSetArray(jsonArray, null, "");
+        return getDataSetObject(jsonArray, innerLabel, BgColors, "line");
     }
 
     private JsonObject getBarGraphData(List<Reaction> reactions) {
         return new JsonObject();
     }
 
-    private JsonObject getRadarGraphData(List<Reaction> reactions) {
+    private JsonObject getRadarGraphData(List<Reaction> reactions, JsonArray colors) {
         JsonArray valuesArray = new JsonArray();
-        JsonArray labels = new JsonArray();
         for (Reaction reaction : reactions) {
-            labels.add(reaction.getReaction());
             valuesArray.add(reaction.getValue());
         }
 
-        return getDataSetArray(valuesArray, labels, "labels");
+        return getDataSetObject(valuesArray, "Reaction", colors, "radar");
     }
 
     private JsonObject getPieGraphData() {
         return new JsonObject();
     }
 
-    private JsonObject getDataSetArray(JsonArray arr, JsonArray additionalArr, String additionalFieldName) {
+    private JsonObject getDataSetObject(JsonArray arr, String label, JsonArray colors, String chartType) {
         JsonObject wrapper = new JsonObject();
         JsonArray dataset = new JsonArray();
         JsonObject data = new JsonObject();
 
         data.add("data", arr);
-        data.addProperty("label", "");
+        data.addProperty("label", label);
+
+        if (chartType.equals("line")) {
+            data.addProperty("borderColor", "#3498db");
+            data.addProperty("backgroundColor", "transparent");
+            data.addProperty("fill", false);
+        } else if (chartType.equals("bar")) {
+            data.add("backgroundColor", colors);
+
+        } else if (chartType.equals("radar")) {
+            data.addProperty("fill", "true");
+            data.addProperty("borderColor", "#3498db");
+            data.addProperty("backgroundColor", "#3361gb");
+            data.addProperty("pointBorderColor", "#3498db");
+            data.addProperty("pointBackgroundColor", "#3443db");
+            /*
+            fill: true,
+          backgroundColor: "rgba(179,181,198,0.2)",
+          borderColor: "rgba(179,181,198,1)",
+          pointBorderColor: "#fff",
+          pointBackgroundColor: "rgba(179,181,198,1)",
+             */
+        }
+
         dataset.add(data);
 
         wrapper.add("dataset", dataset);
-        if(additionalArr != null)
-            wrapper.add(additionalFieldName, additionalArr);
         return wrapper;
+    }
+
+
+    private JsonArray generateLineChartLabels(Timestamp fromTime,Timestamp toTime, Integer numberOfDays){
+        Long toTimeLong = toTime.getTime();
+        Long fromTimeLong = fromTime.getTime();
+
+        // get the total diff between the dates
+        Long diffTimes = toTimeLong - fromTimeLong;
+
+        // get the diff between each label
+        Long diffBetweenLabels = diffTimes / numberOfDays;
+
+        JsonArray labels = new JsonArray();
+
+        for (int i=-1; i< numberOfDays; i++) {
+            labels.add(formatLabels(i, fromTimeLong, diffBetweenLabels));
+        }
+        return labels;
+
+    }
+
+    private String formatLabels(int i, Long time, Long diff) {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        DateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
+
+        Long newDate = time + diff * i;
+        String dateString = dateFormat.format(newDate);
+        Timestamp newTimestamp = Timestamp.valueOf(dateString);
+        String newDateString = dateFormat1.format(newTimestamp);
+
+        return newDateString;
+    }
+
+    private JsonObject getOptionsForGraph(JsonObject exposureObject, String titleText, boolean displayLegend) {
+        JsonObject options = new JsonObject();
+        JsonObject legend = new JsonObject();
+        JsonObject title = new JsonObject();
+
+        if (!titleText.equals("")) {
+            title.addProperty("display", true);
+        } else {
+            title.addProperty("display", false);
+        }
+        title.addProperty("text", titleText);
+
+        legend.addProperty("display", displayLegend);
+
+        options.add("legend", legend);
+        options.add("title", title);
+
+        exposureObject.add("options", options);
+        return exposureObject;
+    }
+
+    private JsonArray generateRadarLabels(List<Reaction> reactionValues){
+        JsonArray labels = new JsonArray();
+        for (Reaction reactionValue : reactionValues) {
+            labels.add(reactionValue.getReaction());
+        }
+        return labels;
+    }
+
+    private String formatDate(String dateToConvert) {
+        Timestamp temp = Timestamp.valueOf(dateToConvert + " 00:00:00");
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return dateFormat.format(temp);
+
     }
 }
