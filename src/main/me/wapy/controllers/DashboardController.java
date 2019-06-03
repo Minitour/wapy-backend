@@ -86,7 +86,7 @@ public class DashboardController implements RESTRoute {
             // getting the traffic
             Long counter = access.getTraffic(fromTime, toTime);
 
-            JsonObject trafficObject = getProductAsJson("Traffic", null, null, counter, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject trafficObject = getProductAsJson("Traffic", null, null, counter, "eye", "red", "white", 0L, true, "", false);
 
             // adding the traffic number to the stats array
             // will get 0 or above - no nulls
@@ -128,7 +128,7 @@ public class DashboardController implements RESTRoute {
                 pId = least_viewed_product.getObject_id();
             else
                 pId = "";
-            JsonObject leastViewedProductObject = getProductAsJson("Least Viewed Product: " + pId, pId,null, least_viewed_product_value, "heart-broken", "#576574", "white", 0L, true, "", false);
+            JsonObject leastViewedProductObject = getProductAsJson("Least Viewed Product: " + pId, pId,null, least_viewed_product_value, "heartbeat", "#576574", "white", 0L, true, "", false);
 
             // append to the stats array
             statsObject.add(leastViewedProductObject);
