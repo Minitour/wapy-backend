@@ -62,42 +62,40 @@ public class ProductAccess extends Database {
     }
 
     /**
-     * Returns the amount of people who liked the specific product
-     * @param objectId
+     * Returns a list of dictionary with all reactions for given store and time interval
      * @param fromTime
      * @param toTime
      * @return
      * @throws SQLException
      */
-    public Long getTotalLikesPerProduct(String owner_uid, String objectId, Timestamp fromTime, Timestamp toTime) throws SQLException {
-        List<String> emotions = new ArrayList<>();
-        emotions.add("calm");
-        emotions.add("happy");
+    public List<Reaction> getReactionsPerProduct(String owner_uid, String product_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
+        List<Reaction> productsReactions = new ArrayList<>();
+/*
+select count(object_id) from images_table
+where calm > 50.0 and happy > 50.0 and surprised > 50.0 and object_id =
+ */
+        String query = "SELECT object_id, count(object_id) as likes from images_table " +
+                "WHERE ((calm > 50.0 and happy > 50.0 and surprised > 50.0) or (smile = 1)) and owner_uid = ? and object_id = ? and timestamp BETWEEN ? and ?";
 
-        Long counter = 0L;
+        // get all records for the query
+        List<Map<String, Object>> res = sql.get(
+                query,
+                owner_uid, product_id, fromTime, toTime
+        );
 
-        // checking if the person is smiling
-        Long c = getSmilesForProduct(fromTime, toTime, objectId, owner_uid);
-        if (c > 0)
-            counter += c;
+        if (!res.isEmpty()) {
+            for (Map<String, Object> re : res) {
 
-        try(BoxAccess access = new BoxAccess(this)) {
+                Long value = (Long) res.get(0).get("likes");
+                String key = res.get(0).get("object_id").toString();
+                Reaction reaction = new Reaction(key, value);
 
-            // getting all reactions for object
-            List<Reaction> reactions = access.getAllReactionsPerProductPerBox(objectId, owner_uid, fromTime, toTime);
+                productsReactions.add(reaction);
 
-            // checking if one of the reactions are in the friendly zone
-            for (Reaction reaction : reactions) {
-                if (emotions.contains(reaction.getReaction())) {
-                    counter += 1L;
-                }
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
 
-        return counter;
+        return productsReactions;
     }
 
     /**
