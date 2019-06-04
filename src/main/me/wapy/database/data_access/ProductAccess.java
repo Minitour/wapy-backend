@@ -68,13 +68,12 @@ public class ProductAccess extends Database {
      * @return
      * @throws SQLException
      */
-    public List<Reaction> getReactionsPerProduct(String owner_uid, String product_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
-        List<Reaction> productsReactions = new ArrayList<>();
+    public Long getReactionsPerProduct(String owner_uid, String product_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
 /*
 select count(object_id) from images_table
 where calm > 50.0 and happy > 50.0 and surprised > 50.0 and object_id =
  */
-        String query = "SELECT object_id, count(object_id) as likes from images_table " +
+        String query = "SELECT count(object_id) as likes from images_table " +
                 "WHERE ((calm > 50.0 and happy > 50.0 and surprised > 50.0) or (smile = 1)) and owner_uid = ? and object_id = ? and timestamp BETWEEN ? and ?";
 
         // get all records for the query
@@ -83,19 +82,14 @@ where calm > 50.0 and happy > 50.0 and surprised > 50.0 and object_id =
                 owner_uid, product_id, fromTime, toTime
         );
 
+        Long likes = 0L;
+
         if (!res.isEmpty()) {
-            for (Map<String, Object> re : res) {
 
-                Long value = (Long) res.get(0).get("likes");
-                String key = res.get(0).get("object_id").toString();
-                Reaction reaction = new Reaction(key, value);
-
-                productsReactions.add(reaction);
-
-            }
+            likes += (Long) res.get(0).get("likes");
         }
 
-        return productsReactions;
+        return likes;
     }
 
     /**
