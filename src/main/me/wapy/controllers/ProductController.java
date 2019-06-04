@@ -96,16 +96,7 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             //  get total likes per product
             // ---------------------------------------------------------------//
-            // TODO: change into dashboard access for productReactionsSummary function
-            List<Reaction> reactionsPerProduct = access.getReactionsPerProduct(owner_uid, object_id, fromTime, toTime);
-
-            Long likes = 0L;
-
-            for (Reaction reaction : reactionsPerProduct) {
-                System.out.println(reaction.getReaction());
-                System.out.println();
-                likes += reaction.getValue();
-            }
+            Long likes = access.getReactionsPerProduct(owner_uid, object_id, fromTime, toTime);
 
             JsonObject likesObject = getProductAsJson("Likes", null, likes, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
@@ -273,7 +264,6 @@ public class ProductController implements RESTRoute {
             }
             case "radar": {
                 JsonArray colors = new JsonArray();
-                System.out.println("got Here");
                 labels = generateRadarLabels(reactionValues);
                 data = getRadarGraphData(reactionValues, colors);
                 data.add("labels", labels);
