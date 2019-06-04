@@ -163,7 +163,7 @@ public class BoxAccess extends Database {
         }
 
         for (String emotion : emotions) {
-            Reaction reaction = new Reaction(emotion, (Long) res.get(0).get(emotion));
+            Reaction reaction = new Reaction(emotion, Long.valueOf(res.get(0).get(emotion).toString()));
             allReactions.add(reaction);
         }
 

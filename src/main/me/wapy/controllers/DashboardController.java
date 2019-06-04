@@ -220,26 +220,31 @@ public class DashboardController implements RESTRoute {
             // ---------------------------------------------------------------//
             List<Product> productsList = access.getAllProductInWindow(owner_uid, fromTime, toTime);
 
+            JsonArray columnsValues = new JsonArray();
+            JsonArray columns = new JsonArray();
+
+            columns.add("Product");
+            columns.add("Views");
+
             // checking we have a list to append
             if (!productsList.isEmpty()) {
 
-                // construct the columns for the table
-                JsonArray columns = new JsonArray();
-                columns.add("Product");
-                columns.add("Views");
-
                 // get the product list as json array
-                JsonArray columnsValues = getProductListAsJsonArray(access, productsList, owner_uid, fromTime, toTime);
+                columnsValues = getProductListAsJsonArray(access, productsList, owner_uid, fromTime, toTime);
 
                 // sort the array by views
                 columnsValues = sortJsonArray(columnsValues);
 
-                // get the table as a json object
-                JsonObject productListObject = getTableAsJson("Products", "Views", columns, columnsValues);
-
-                tablesObject.add(productListObject);
+            } else {
+                JsonArray tempColumnsValues = new JsonArray();
+                tempColumnsValues.add("No Products");
+                tempColumnsValues.add(0);
+                columnsValues.add(tempColumnsValues);
             }
+            // get the table as a json object
+            JsonObject productListObject = getTableAsJson("Products", "Views", columns, columnsValues);
 
+            tablesObject.add(productListObject);
 
             // ---------------------------------------------------------------//
             // reactions per owner

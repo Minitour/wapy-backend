@@ -92,7 +92,13 @@ public class BoxController implements RESTRoute {
                 values.add(columnValues);
             }
 
-            values = sortJsonArray(values);
+
+            if (values.size() == 0) {
+                // putting blank row
+                JsonArray tempValues = new JsonArray();
+                tempValues.add("No Products");
+                values.add(tempValues);
+            }
 
             // get the table as json
             JsonObject jsonProducts = getTableAsJson("Products", "Products", columns, values);
@@ -230,39 +236,4 @@ public class BoxController implements RESTRoute {
         return tempProduct;
     }
 
-    private JsonArray sortJsonArray(JsonArray jsonArray) {
-        // transform the json array into list
-        List<JsonObject> values = new ArrayList<>();
-
-        for (JsonElement columnsValue : jsonArray) {
-            JsonObject pair = new JsonObject();
-            pair.addProperty("key", columnsValue.getAsJsonArray().get(0).getAsString());
-            pair.addProperty("value", columnsValue.getAsJsonArray().get(1).getAsInt());
-            values.add(pair);
-        }
-
-        values.sort(new Comparator<JsonObject>() {
-            @Override
-            public int compare(JsonObject o1, JsonObject o2) {
-                if (o1.get("value").getAsString().equals(o2.get("value").getAsString())) {
-                    return -1;
-                } else if (o1.get("value").getAsInt() == o2.get("value").getAsInt()) {
-                    return 0;
-                } else {
-                    return 1;
-                }
-            }
-        });
-
-        // transform back to json array
-        JsonArray newValues = new JsonArray();
-        for (JsonObject value : values) {
-            JsonArray innerArray = new JsonArray();
-            innerArray.add(value.get("key").getAsString());
-            innerArray.add(value.get("value").getAsInt());
-            newValues.add(innerArray);
-        }
-
-        return newValues;
-    }
 }
