@@ -96,7 +96,16 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             //  get total likes per product
             // ---------------------------------------------------------------//
-            Long likes = access.getTotalLikesPerProduct(owner_uid, object_id, fromTime, toTime);
+            // TODO: change into dashboard access for productReactionsSummary function
+            List<Reaction> reactionsPerProduct = access.getReactionsPerProduct(owner_uid, object_id, fromTime, toTime);
+
+            Long likes = 0L;
+
+            for (Reaction reaction : reactionsPerProduct) {
+                System.out.println(reaction.getReaction());
+                System.out.println();
+                likes += reaction.getValue();
+            }
 
             JsonObject likesObject = getProductAsJson("Likes", null, likes, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
 
@@ -117,7 +126,7 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             List<Reaction> reactions = access.getProductReactionSummary(owner_uid, object_id, fromTime, toTime);
 
-            JsonObject reactionsObject = getInitGraphObject("radar", "Reactions Radar", false, "Reactions");
+            JsonObject reactionsObject = getInitGraphObject("radar", "Product - Reactions Map", false, "Reactions");
 
             reactionsObject = getGraphData(reactionsObject, null, reactions,"Reaction", fromTime, toTime, numberOfDays);
 

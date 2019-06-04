@@ -266,42 +266,6 @@ public class DashboardAccess extends Database {
     }
 
     /**
-     * Returns a list of dictionary with all reactions for given store and time interval
-     * @param fromTime
-     * @param toTime
-     * @return
-     * @throws SQLException
-     */
-    public List<Map<String,List<Reaction>>> getReactionsPerProduct(String owner_uid, Timestamp fromTime, Timestamp toTime) throws SQLException {
-        List<Map<String,List<Reaction>>> productsReactions = new ArrayList<>();
-
-        List<Product> productList = getAllProductInWindow(owner_uid, fromTime, toTime);
-
-        if (productList.isEmpty())
-            return productsReactions;
-
-        try(BoxAccess access = new BoxAccess(this)) {
-            Map<String, List<Reaction>> productReaction = new HashMap<>();
-            for (Product product : productList) {
-
-                // getting all reactions for product
-                List<Reaction> reactions = access.getAllReactionsPerProductPerBox(product.getObject_id(), owner_uid, fromTime, toTime);
-
-                // construct a hashmap
-                productReaction.put(product.getObject_id(), reactions);
-
-                // add to the list of product with reactions
-                productsReactions.add(productReaction);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return productsReactions;
-    }
-
-    /**
      * Returns all product monitored in window
      * @param fromTime
      * @param toTime
