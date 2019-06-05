@@ -212,10 +212,52 @@ where calm > 50.0 and happy > 50.0 and surprised > 50.0 and object_id =
 
 
     public JsonArray getAgeRangeValuesForProduct(String owner_uid, String productId, Timestamp fromTime, Timestamp toTime) throws SQLException {
-//        String[] fields = {"calm","happy","confused","disgusted","angry","sad","surprised"};
+
         String template = "SELECT '%s' as group_id, count(*) as age FROM wapy_db.images_table where ((age_low + age_high) / 2) between ? and ? and owner_uid = ? and object_id = ? and timestamp between ? and ?";
 
-        //String template = "(select count(*) as value, '%s' as type from images_table where %s > 50 and owner_uid = ? and timestamp between ? and ?)";
+        List<Object> args = new ArrayList<>();
+        StringBuilder query = new StringBuilder();
+        int groupSize = 8;
+        int gapSize = 10;
+
+        for (int i = 0; i < groupSize; i++) {
+
+            // create query from template.
+            String range = i < groupSize - 1
+                    ? String.format("Age %d-%d",(i+1) * gapSize,(i+1) * gapSize + gapSize)
+                    : String.format("Age %d+",(i+1) * gapSize);
+
+            query.append(String.format(template,range));
+
+            // add arguments.
+            args.add(((i+1) * gapSize));
+            args.add((i+1) * gapSize + gapSize);
+            args.add(owner_uid);
+            args.add(productId);
+            args.add(fromTime);
+            args.add(toTime);
+
+            // append union all only if not the last entry.
+            if(i < groupSize - 1)
+                query.append(" UNION ALL ");
+        }
+
+        return sql.read(query.toString(),args.toArray());
+    }
+
+    public JsonArray getAgeRangeMaleValuesForProduct(String owner_uid, String productId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+        String template = "SELECT '%s' as group_id, count(*) as age FROM wapy_db.images_table where ((age_low + age_high) / 2) between ? and ? and owner_uid = ? and object_id = ? and timestamp between ? and ? and gender = 'm'";
+        return getAgeRangeGenderValuesForProducts(template, owner_uid, productId, fromTime, toTime);
+    }
+
+    public JsonArray getAgeRangeFemaleValuesForProduct(String owner_uid, String productId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+
+        String template = "SELECT '%s' as group_id, count(*) as age FROM wapy_db.images_table where ((age_low + age_high) / 2) between ? and ? and owner_uid = ? and object_id = ? and timestamp between ? and ? and gender = 'f'";
+        return getAgeRangeGenderValuesForProducts(template, owner_uid, productId, fromTime, toTime);
+
+    }
+
+    private JsonArray getAgeRangeGenderValuesForProducts(String template, String owner_uid, String productId, Timestamp fromTime, Timestamp toTime) throws SQLException {
         List<Object> args = new ArrayList<>();
         StringBuilder query = new StringBuilder();
         int groupSize = 8;
