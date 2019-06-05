@@ -1,7 +1,9 @@
 package me.wapy.controllers;
 
+import com.google.api.client.json.Json;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import me.wapy.database.data_access.ProductAccess;
 import me.wapy.model.Reaction;
@@ -117,11 +119,11 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             List<Reaction> reactions = access.getProductReactionSummary(owner_uid, object_id, fromTime, toTime);
 
-            JsonObject reactionsObject = getInitGraphObject("radar", "Product - Reactions Map", true, "Reactions");
+            JsonObject reactionsObject = getInitGraphObject("radar", "Product - Reactions Map", false, "Reactions");
 
             reactionsObject = getGraphData(reactionsObject, null, reactions,"Reaction", fromTime, toTime, numberOfDays);
 
-            reactionsObject = getOptionsForGraph(reactionsObject, "Product Reactions", true);
+            reactionsObject = getOptionsForGraph(reactionsObject, "Product Reactions", false);
 
             graphsObject.add(reactionsObject);
 
@@ -130,7 +132,7 @@ public class ProductController implements RESTRoute {
             //  get views per time period
             // ---------------------------------------------------------------//
 
-            JsonObject views_over_time_object = getInitGraphObject("line", "Views Over Time", true, "Views");
+            JsonObject views_over_time_object = getInitGraphObject("line", "Views Over Time", false, "Views");
             JsonArray labels = generateLineChartLabels(fromTime, toTime, numberOfDays);
             List<Long> views_over_time = new ArrayList<>();
 
@@ -147,7 +149,7 @@ public class ProductController implements RESTRoute {
             views_over_time_object = getGraphData(views_over_time_object, views_over_time, null, "Views", fromTime, toTime, numberOfDays);
 
             // getting the option for the graph
-            views_over_time_object = getOptionsForGraph(views_over_time_object, "Views", true);
+            views_over_time_object = getOptionsForGraph(views_over_time_object, "Views", false);
 
             graphsObject.add(views_over_time_object);
 
@@ -169,6 +171,34 @@ public class ProductController implements RESTRoute {
             genderPieObject = getOptionsForGraph(genderPieObject, "Product - Gender Pie", true);
 
             graphsObject.add(genderPieObject);
+
+
+            // ---------------------------------------------------------------//
+            //  age range bar chart
+            // ---------------------------------------------------------------//
+            JsonObject ageRangeObject = getInitGraphObject("bar", "Age Range", false, "Product - Age Spread");
+
+            // getting the age ranges and the values for each one
+            JsonArray jsonArray1 = access.getAgeRangeValuesForProduct(owner_uid, object_id, fromTime, toTime);
+
+            // getting the labels for the graph
+            JsonArray ageRangeLabels = getAgeRangeLabels(jsonArray1);
+
+            // getting the values from the json array
+            List<Long> ageRangeValues = getAgeRangeValues(jsonArray1);
+
+            // add graph data to the json object
+            ageRangeObject = getGraphData(ageRangeObject, ageRangeValues, null, "Age", fromTime, toTime, numberOfDays);
+
+            // adding the labels
+            ageRangeObject.get("data").getAsJsonObject().add("labels", ageRangeLabels);
+
+            // add the options for the json
+            ageRangeObject = getOptionsForGraph(ageRangeObject, "Age Spread", false);
+
+            graphsObject.add(ageRangeObject);
+
+
 
         }
 
@@ -280,7 +310,8 @@ public class ProductController implements RESTRoute {
                 break;
             }
             case "bar": {
-                data = getBarGraphData(reactionValues);
+                JsonArray colors = generateBarColors();
+                data = getBarGraphData(longValues, colors);
                 break;
             }
             case "radar": {
@@ -325,8 +356,12 @@ public class ProductController implements RESTRoute {
         return getDataSetObject(jsonArray, innerLabel, BgColors, "line");
     }
 
-    private JsonObject getBarGraphData(List<Reaction> reactions) {
-        return new JsonObject();
+    private JsonObject getBarGraphData(List<Long> ageRangeValues, JsonArray colors) {
+        JsonArray valuesArray = new JsonArray();
+        for (Long ageRangeValue : ageRangeValues) {
+            valuesArray.add(ageRangeValue);
+        }
+        return getDataSetObject(valuesArray, "Age Range", colors, "bar");
     }
 
     private JsonObject getRadarGraphData(List<Reaction> reactions, JsonArray colors) {
@@ -467,4 +502,45 @@ public class ProductController implements RESTRoute {
         return dateFormat.format(temp);
 
     }
+
+    private JsonArray getAgeRangeLabels(JsonArray values){
+        JsonArray labels = new JsonArray();
+        for (JsonElement value : values) {
+            labels.add(value.getAsJsonObject().get("group_id"));
+        }
+        return labels;
+    }
+
+    private List<Long> getAgeRangeValues(JsonArray values) {
+        List<Long> ageRangeValues = new ArrayList<>();
+        for (JsonElement value : values) {
+            ageRangeValues.add(value.getAsJsonObject().get("age").getAsLong());
+        }
+        return ageRangeValues;
+    }
+
+    private JsonArray generateBarColors() {
+        JsonArray jsonArray = new JsonArray();
+        jsonArray.add("#B0E6FD");
+        jsonArray.add("#52C3FB");
+        jsonArray.add("#54BEDF");
+        jsonArray.add("#55B8C1");
+        jsonArray.add("#47A3EA");
+        jsonArray.add("#156BC8");
+        jsonArray.add("#034A98");
+        jsonArray.add("#012C6E");
+
+        /*
+        B0E6FD -> 10-20
+        52C3FB -> 20-30
+        54BEDF -> 30-40
+        55B8C1 -> 40-50
+        47A3EA -> 50-60
+        156BC8 -> 60-70
+        034A98 -> 70-80
+        012C6E -> 80+
+         */
+        return jsonArray;
+    }
+
 }
