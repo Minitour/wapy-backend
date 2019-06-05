@@ -137,13 +137,13 @@ public class BoxAccess extends Database {
     }
 
 
-    public Long getTotalViewsPerProduct(String owner_uid, String productId, String camera_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
-        String query = "select count(object_id) as value FROM objects_table " +
-                "WHERE (timestamp BETWEEN ? and ?) AND (object_id = ?) AND (owner_uid = ?) AND (camera_id = ?)";
+    public List<Product> getTotalViewsPerProduct(String owner_uid, String camera_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
+        String query = "select object_id, count(object_id) as value FROM objects_table " +
+                "WHERE (timestamp BETWEEN ? and ?) AND (owner_uid = ?) AND (camera_id = ?) GROUP BY object_id ORDER BY value DESC";
         // getting the results for the query
         List<Map<String, Object>> res = sql.get(
                 query,
-                fromTime, toTime, productId, owner_uid, camera_id
+                fromTime, toTime, owner_uid, camera_id
         );
 
         // checking for validation of result
@@ -155,6 +155,12 @@ public class BoxAccess extends Database {
             System.out.println(res);
         }
 
-        return (Long) res.get(0).get("value");
+        List<Product> products = new ArrayList<>();
+        for (Map<String, Object> re : res) {
+            Product product = new Product(re);
+            products.add(product);
+        }
+
+        return products;
     }
 }
