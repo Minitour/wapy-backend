@@ -1,5 +1,6 @@
 package me.wapy.database.data_access;
 
+import com.google.gson.JsonObject;
 import me.wapy.database.AuthContext;
 import me.wapy.database.Database;
 import me.wapy.model.Product;
@@ -173,5 +174,40 @@ where calm > 50.0 and happy > 50.0 and surprised > 50.0 and object_id =
 
         return reactions;
     }
+
+    public JsonObject getProductViewsPerGender(String owner_uid, String productId, Timestamp fromTime, Timestamp toTime) throws SQLException {
+
+        String query = "SELECT gender, count(gender) as views FROM images_table WHERE owner_uid = ? and object_id = ? and timestamp between ? and ? GROUP BY gender";
+
+        List<Map<String, Object>> res = sql.get(
+                query,
+                owner_uid, productId, fromTime, toTime
+        );
+
+        if (res.isEmpty())
+            return null;
+
+        if (debug)
+            System.out.println(res);
+
+        Long maleViews = 0L;
+        Long femaleViews = 0L;
+
+        for (Map<String, Object> re : res) {
+            if (re.get("gender").toString().equals("m")) {
+                maleViews = (Long) re.get("views");
+            } else{
+                femaleViews = (Long) re.get("views");
+            }
+        }
+
+        JsonObject views = new JsonObject();
+        views.addProperty("male", maleViews);
+        views.addProperty("female", femaleViews);
+
+        return views;
+
+    }
+
 
 }

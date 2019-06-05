@@ -86,7 +86,7 @@ public class DashboardController implements RESTRoute {
             // getting the traffic
             Long counter = access.getTraffic(owner_uid, fromTime, toTime);
 
-            JsonObject trafficObject = getProductAsJson("Traffic", null, null, counter, "eye", "red", "white", 0L, true, "", false);
+            JsonObject trafficObject = getProductAsJson("Traffic", null, null, counter, "eye", "#e74c3c", "white", 0L, true, "", false);
 
             // adding the traffic number to the stats array
             // will get 0 or above - no nulls

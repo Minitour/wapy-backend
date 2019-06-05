@@ -88,7 +88,7 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             Long views = access.getTotalViewsPerProduct(owner_uid, object_id, fromTime, toTime);
 
-            JsonObject viewsObject = getProductAsJson("Views", null, views, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject viewsObject = getProductAsJson("Views", null, views, "eye", "#e74c3c", "white", 0L, true, "", false);
 
             statsObject.add(viewsObject);
 
@@ -98,7 +98,7 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             Long likes = access.getReactionsPerProduct(owner_uid, object_id, fromTime, toTime);
 
-            JsonObject likesObject = getProductAsJson("Likes", null, likes, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject likesObject = getProductAsJson("Likes", null, likes, "thumbs-up", "white", "white", 0L, true, "", false);
 
             statsObject.add(likesObject);
 
@@ -108,7 +108,7 @@ public class ProductController implements RESTRoute {
 
             Long smiles = access.getSmilesForProduct(fromTime, toTime, object_id, owner_uid);
 
-            JsonObject smilesObject = getProductAsJson("Smiles", null, smiles, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject smilesObject = getProductAsJson("Smiles", null, smiles, "smile", "white", "white", 0L, true, "", false);
 
             statsObject.add(smilesObject);
 
@@ -150,6 +150,41 @@ public class ProductController implements RESTRoute {
             views_over_time_object = getOptionsForGraph(views_over_time_object, "Views", false);
 
             graphsObject.add(views_over_time_object);
+
+            // ---------------------------------------------------------------//
+            //  pie chart for gender
+            // ---------------------------------------------------------------//
+            /*
+            data: {
+      labels: ["Africa", "Asia", "Europe", "Latin America", "North America"],
+      datasets: [{
+        label: "Population (millions)",
+        backgroundColor: ["#3e95cd", "#8e5ea2","#3cba9f","#e8c3b9","#c45850"],
+        data: [2478,5267,734,784,433]
+      }]
+    },
+    options: {
+      title: {
+        display: true,
+        text: 'Predicted world population (millions) in 2050'
+      }
+    }
+             */
+
+            JsonObject genderPieObject = getInitGraphObject("pie", "Gender", false, "Product - Gender Pie");
+
+            // getting the values for female and male looking at the product
+            JsonObject pieData = access.getProductViewsPerGender(owner_uid, object_id, fromTime, toTime);
+
+            List<Long> productViews = new ArrayList<>();
+            productViews.add(pieData.get("male").getAsLong());
+            productViews.add(pieData.get("female").getAsLong());
+
+            genderPieObject = getGraphData(genderPieObject, productViews, null, "Gender", fromTime, toTime, numberOfDays);
+
+            genderPieObject = getOptionsForGraph(genderPieObject, "Product - Gender Pie", false);
+
+            graphsObject.add(genderPieObject);
 
         }
 
@@ -272,7 +307,10 @@ public class ProductController implements RESTRoute {
                 break;
             }
             case "pie": {
-                data = getPieGraphData();
+                labels = generatePieLabels();
+                JsonArray colors = generatePieColors();
+                data = getPieGraphData(longValues, colors);
+                data.add("labels", labels);
                 break;
             }
         }
@@ -316,8 +354,13 @@ public class ProductController implements RESTRoute {
         return getDataSetObject(valuesArray, "Reaction", colors, "radar");
     }
 
-    private JsonObject getPieGraphData() {
-        return new JsonObject();
+    private JsonObject getPieGraphData(List<Long> values, JsonArray colors) {
+        JsonArray valuesArray = new JsonArray();
+        for (Long value : values) {
+            valuesArray.add(value);
+        }
+
+        return getDataSetObject(valuesArray, "Gender", colors, "pie");
     }
 
     private JsonObject getDataSetObject(JsonArray arr, String label, JsonArray colors, String chartType) {
@@ -342,12 +385,31 @@ public class ProductController implements RESTRoute {
             data.addProperty("pointBorderColor", "#3498db");
             data.addProperty("pointBackgroundColor", "#3443db");
 
+        } else if (chartType.equals("pie")) {
+            data.add("backgroundColor", colors);
         }
 
         dataset.add(data);
 
         wrapper.add("dataset", dataset);
         return wrapper;
+    }
+
+    private JsonArray generatePieColors() {
+        JsonArray colors = new JsonArray();
+        colors.add("#53C4F8");
+        colors.add("#E9517E");
+        return colors;
+    }
+
+
+
+    private JsonArray generatePieLabels() {
+        JsonArray pieLabels = new JsonArray();
+        pieLabels.add("Male");
+        pieLabels.add("Female");
+        return pieLabels;
+
     }
 
 
