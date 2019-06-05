@@ -34,21 +34,30 @@ public class BoxAccess extends Database {
      * @return
      */
     public List<Product> getAllProductsInWindow(String owner_uid, String camera_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
-        List<Product> rawProducts = new ArrayList<>();
-        try(DashboardAccess access = new DashboardAccess(this)) {
-            rawProducts = access.getAllProductInWindow(owner_uid, fromTime, toTime);
+        List<Product> products = new ArrayList<>() ;
+        String query = "SELECT object_id FROM objects_table \n" +
+                "WHERE camera_id = ? and owner_uid = ? and\n" +
+                "timestamp BETWEEN ? and ?\n" +
+                "GROUP BY object_id";
 
-            List<Product> products = new ArrayList<>();
-            for (Product rawProduct : rawProducts) {
-                if (rawProduct.getCamera_id().equals(camera_id))
-                    products.add(rawProduct);
+
+        // get all records for the query
+        List<Map<String, Object>> res = sql.get(
+                query,
+                camera_id, owner_uid, fromTime, toTime
+        );
+
+        if (!res.isEmpty()) {
+            for (Map<String, Object> re : res) {
+
+                Product product = new Product(re);
+
+                products.add(product);
+
             }
-            return products;
-
-        }catch (Exception e) {
-            e.printStackTrace();
         }
-        return rawProducts;
+        return products;
+
     }
 
     /**
