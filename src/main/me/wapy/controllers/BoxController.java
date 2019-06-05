@@ -73,8 +73,8 @@ public class BoxController implements RESTRoute {
             // ---------------------------------------------------------------//
             //  getting all products in window (specific camera)
             // ---------------------------------------------------------------//
-            List<Product> productList = access.getAllProductsInWindow(owner_uid, camera_id, fromTime, toTime);
 
+            List<Product> productList = access.getTotalViewsPerProduct(owner_uid, camera_id, fromTime, toTime);
             // construct the columns
             JsonArray columns = new JsonArray();
             columns.add("Product");
@@ -91,8 +91,8 @@ public class BoxController implements RESTRoute {
                 // construct the value
                 columnValues.add(object_id);
 
-                Long views1 = access.getTotalViewsPerProduct(owner_uid, object_id, camera_id, fromTime, toTime);
-                columnValues.add(views1);
+                Long views = product.getValue();
+                columnValues.add(views);
 
                 // add to the values list of tha table
                 values.add(columnValues);
