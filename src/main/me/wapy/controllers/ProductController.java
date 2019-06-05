@@ -88,7 +88,7 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             Long views = access.getTotalViewsPerProduct(owner_uid, object_id, fromTime, toTime);
 
-            JsonObject viewsObject = getProductAsJson("Views", null, views, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject viewsObject = getProductAsJson("Views", null, views, "eye", "#e74c3c", "white", 0L, true, "", false);
 
             statsObject.add(viewsObject);
 
@@ -98,7 +98,7 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             Long likes = access.getReactionsPerProduct(owner_uid, object_id, fromTime, toTime);
 
-            JsonObject likesObject = getProductAsJson("Likes", null, likes, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject likesObject = getProductAsJson("Likes", null, likes, "thumbs-up", "white", "white", 0L, true, "", false);
 
             statsObject.add(likesObject);
 
@@ -108,7 +108,7 @@ public class ProductController implements RESTRoute {
 
             Long smiles = access.getSmilesForProduct(fromTime, toTime, object_id, owner_uid);
 
-            JsonObject smilesObject = getProductAsJson("Smiles", null, smiles, "#172b4d", "#172b4d", "#172b4d", 0L, true, "", false);
+            JsonObject smilesObject = getProductAsJson("Smiles", null, smiles, "smile", "white", "white", 0L, true, "", false);
 
             statsObject.add(smilesObject);
 
