@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import me.wapy.database.data_access.BoxAccess;
+import me.wapy.database.data_access.ProductAccess;
 import me.wapy.model.Product;
 import me.wapy.utils.JSONResponse;
 import me.wapy.utils.RESTRoute;
@@ -77,6 +78,7 @@ public class BoxController implements RESTRoute {
             // construct the columns
             JsonArray columns = new JsonArray();
             columns.add("Product");
+            columns.add("Views");
 
             // construct the values for the columns
             JsonArray values = new JsonArray();
@@ -85,8 +87,12 @@ public class BoxController implements RESTRoute {
             for (Product product : productList) {
                 JsonArray columnValues = new JsonArray();
 
+                String object_id = product.getObject_id();
                 // construct the value
-                columnValues.add(product.getObject_id());
+                columnValues.add(object_id);
+
+                Long views1 = access.getTotalViewsPerProduct(owner_uid, object_id, camera_id, fromTime, toTime);
+                columnValues.add(views1);
 
                 // add to the values list of tha table
                 values.add(columnValues);

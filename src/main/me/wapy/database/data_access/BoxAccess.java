@@ -1,11 +1,13 @@
 package me.wapy.database.data_access;
 
+import com.google.gson.JsonArray;
 import me.wapy.database.AuthContext;
 import me.wapy.database.Database;
 import me.wapy.model.Product;
 import me.wapy.model.Reaction;
 
 import java.sql.SQLException;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -132,5 +134,27 @@ public class BoxAccess extends Database {
         Product product = new Product(res.get(0));
 
         return product;
+    }
+
+
+    public Long getTotalViewsPerProduct(String owner_uid, String productId, String camera_id, Timestamp fromTime, Timestamp toTime) throws SQLException {
+        String query = "select count(object_id) as value FROM objects_table " +
+                "WHERE (timestamp BETWEEN ? and ?) AND (object_id = ?) AND (owner_uid = ?) AND (camera_id = ?)";
+        // getting the results for the query
+        List<Map<String, Object>> res = sql.get(
+                query,
+                fromTime, toTime, productId, owner_uid, camera_id
+        );
+
+        // checking for validation of result
+        if (res.isEmpty()) {
+            return null;
+        }
+
+        if (debug) {
+            System.out.println(res);
+        }
+
+        return (Long) res.get(0).get("value");
     }
 }
