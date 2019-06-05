@@ -210,7 +210,7 @@ public class ProductController implements RESTRoute {
             List<Long> ageRangeFemaleChartLongValues = getJsonArrayAsLongList(ageRangeFemaleChartValues);
 
             // init the object
-            JsonObject ageRangeFemaleProductObject = getInitGraphObject("bar", "Female - Product views", false, "Female Views");
+            JsonObject ageRangeFemaleProductObject = getInitGraphObject("bar", "Female - Product Views", false, "Female Views");
 
             // getting the graph data into object
             ageRangeFemaleProductObject = getGraphData(ageRangeFemaleProductObject, ageRangeFemaleChartLongValues, null, "Female", fromTime, toTime, numberOfDays);
@@ -234,7 +234,7 @@ public class ProductController implements RESTRoute {
             List<Long> ageRangeMaleChartLongValues = getJsonArrayAsLongList(ageRangeMaleChartValues);
 
             // init the object
-            JsonObject ageRangeMaleProductObject = getInitGraphObject("bar", "Male - Product views", false, "Male Views");
+            JsonObject ageRangeMaleProductObject = getInitGraphObject("bar", "Male - Product Views", false, "Male Views");
 
             // getting the graph data into object
             ageRangeMaleProductObject = getGraphData(ageRangeMaleProductObject, ageRangeMaleChartLongValues, null, "Male", fromTime, toTime, numberOfDays);
@@ -407,7 +407,7 @@ public class ProductController implements RESTRoute {
         for (Long ageRangeValue : ageRangeValues) {
             valuesArray.add(ageRangeValue);
         }
-        return getDataSetObject(valuesArray, "Age Range", colors, "bar");
+        return getDataSetObject(valuesArray, "Views", colors, "bar");
     }
 
     private JsonObject getRadarGraphData(List<Reaction> reactions, JsonArray colors) {
