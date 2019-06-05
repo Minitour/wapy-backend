@@ -45,7 +45,7 @@ public class ProductAccess extends Database {
         // getting the results for the query
         List<Map<String, Object>> res = sql.get(
                 query,
-                String.valueOf(fromTime), String.valueOf(toTime), objectId, owner_uid
+                fromTime, toTime, objectId, owner_uid
         );
 
         // checking for validation of result
@@ -159,7 +159,7 @@ where calm > 50.0 and happy > 50.0 and surprised > 50.0 and object_id =
             if(i < fields.length - 1)
                 query.append(" UNION ALL ");
         }
-        System.out.println(query.toString());
+
         // run the query.
         List<Map<String,Object>> rs = sql.get(query.toString(),args.toArray());
 

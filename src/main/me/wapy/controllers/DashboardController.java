@@ -84,7 +84,7 @@ public class DashboardController implements RESTRoute {
             // ---------------------------------------------------------------//
 
             // getting the traffic
-            Long counter = access.getTraffic(fromTime, toTime);
+            Long counter = access.getTraffic(owner_uid, fromTime, toTime);
 
             JsonObject trafficObject = getProductAsJson("Traffic", null, null, counter, "eye", "red", "white", 0L, true, "", false);
 
@@ -98,7 +98,7 @@ public class DashboardController implements RESTRoute {
             // ---------------------------------------------------------------//
 
             //getting the most viewed product (according to the objects_table)
-            Product most_viewed_product = access.getMostViewedProduct(fromTime, toTime);
+            Product most_viewed_product = access.getMostViewedProduct(owner_uid, fromTime, toTime);
 
             Long most_viewed_product_value = 0L;
             if (most_viewed_product != null)
@@ -117,7 +117,7 @@ public class DashboardController implements RESTRoute {
             // ---------------------------------------------------------------//
 
             // getting the least viewed product (according to objects_table)
-            Product least_viewed_product = access.getLeastViewedProduct(fromTime, toTime);
+            Product least_viewed_product = access.getLeastViewedProduct(owner_uid, fromTime, toTime);
 
             Long least_viewed_product_value = 0L;
             // product can be null -> will not add to the json response
@@ -138,7 +138,7 @@ public class DashboardController implements RESTRoute {
             // ---------------------------------------------------------------//
 
             // getting the most viewed product (according to images_table)
-            Product most_viewed_reaction_product = access.getMostViewedProductReaction(fromTime, toTime);
+            Product most_viewed_reaction_product = access.getMostViewedProductReaction(owner_uid, fromTime, toTime);
 
             Long most_viewed_reaction_product_value = 0L;
             // product can be null -> will not add to the json response
@@ -159,7 +159,7 @@ public class DashboardController implements RESTRoute {
             // ---------------------------------------------------------------//
 
             // getting the least viewed product (according to images_table)
-            Product least_viewed_reaction_product = access.getLeastViewedProductReaction(fromTime, toTime);
+            Product least_viewed_reaction_product = access.getLeastViewedProductReaction(owner_uid, fromTime, toTime);
 
             Long least_viewed_reaction_product_value = 0L;
             if (least_viewed_reaction_product != null)
@@ -186,12 +186,12 @@ public class DashboardController implements RESTRoute {
 
             JsonArray labels = generateLineChartLabels(fromTime, toTime, numberOfDays);
 
-            for (int i=1; i<labels.size(); i++) {
-                String stringFromtime = formatDate(labels.get(i-1).getAsString());
-                String stringToTime = formatDate(labels.get(i).getAsString());
+            for (int i=0; i<labels.size() - 1; i++) {
+                String stringFromtime = formatDate(labels.get(i).getAsString());
+                String stringToTime = formatDate(labels.get(i+1).getAsString());
                 Timestamp tempFromTime = Timestamp.valueOf(stringFromtime);
                 Timestamp tempToTime = Timestamp.valueOf(stringToTime);
-                Long exposure = access.getExposure(tempFromTime, tempToTime);
+                Long exposure = access.getExposure(owner_uid, tempFromTime, tempToTime);
                 exposures.add(exposure);
             }
 
@@ -598,9 +598,11 @@ public class DashboardController implements RESTRoute {
 
         JsonArray labels = new JsonArray();
 
-        for (int i=-1; i< numberOfDays; i++) {
+        for (int i=0; i< numberOfDays; i++) {
             labels.add(formatLabels(i, fromTimeLong, diffBetweenLabels));
         }
+        labels.add(formatLabels(0, toTimeLong, 0L));
+
         return labels;
 
     }

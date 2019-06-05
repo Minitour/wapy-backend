@@ -134,17 +134,19 @@ public class ProductController implements RESTRoute {
             JsonArray labels = generateLineChartLabels(fromTime, toTime, numberOfDays);
             List<Long> views_over_time = new ArrayList<>();
 
-            for (int i=1; i<labels.size(); i++) {
-                String stringFromtime = formatDate(labels.get(i-1).getAsString());
-                String stringToTime = formatDate(labels.get(i).getAsString());
+            for (int i=0; i<labels.size() - 1; i++) {
+                String stringFromtime = formatDate(labels.get(i).getAsString());
+                String stringToTime = formatDate(labels.get(i+1).getAsString());
                 Timestamp tempFromTime = Timestamp.valueOf(stringFromtime);
                 Timestamp tempToTime = Timestamp.valueOf(stringToTime);
                 Long exposure = access.getTotalViewsPerProduct(owner_uid, object_id, tempFromTime, tempToTime);
                 views_over_time.add(exposure);
             }
 
+            // setting the graph for the product
             views_over_time_object = getGraphData(views_over_time_object, views_over_time, null, "Views", fromTime, toTime, numberOfDays);
 
+            // getting the option for the graph
             views_over_time_object = getOptionsForGraph(views_over_time_object, "Views", false);
 
             graphsObject.add(views_over_time_object);
@@ -252,9 +254,9 @@ public class ProductController implements RESTRoute {
         JsonArray labels = new JsonArray();
         switch (initObject.get("type").getAsString()) {
             case "line": {
-                data = getLineGraphData(longValues, innerLabel, new JsonArray());
                 labels = generateLineChartLabels(fromTime, toTime, numberOfDays);
                 labels.remove(0);
+                data = getLineGraphData(longValues, innerLabel, new JsonArray(), labels);
                 data.add("labels", labels);
                 break;
             }
@@ -279,36 +281,23 @@ public class ProductController implements RESTRoute {
     }
 
 
-    /*
-    data: [
-       {
-        x: 10,
-        y: 20
-       },
-       {
-        x: 15,
-        y: 10
-       }
-    ]
-     */
-    private JsonObject getLineGraphData(List<Long> values, String innerLabel, JsonArray BgColors) {
+    private JsonObject getLineGraphData(List<Long> values, String innerLabel, JsonArray BgColors, JsonArray labels) {
 
         JsonArray jsonArray = new JsonArray();
-        JsonArray labels = new JsonArray();
+        int index = 0;
         for (Long value : values) {
 
             JsonObject xY = new JsonObject();
 
-            // get the date
-            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            Date date = new Date();
-            String dateString = dateFormat.format(date);
+            String dateString = labels.get(index).getAsString();
 
             // add the values to fields
             xY.addProperty("x", dateString);
             xY.addProperty("y", value);
 
             jsonArray.add(xY);
+
+            index += 1;
         }
 
         return getDataSetObject(jsonArray, innerLabel, BgColors, "line");
@@ -352,13 +341,7 @@ public class ProductController implements RESTRoute {
             data.addProperty("backgroundColor", "#3361gb");
             data.addProperty("pointBorderColor", "#3498db");
             data.addProperty("pointBackgroundColor", "#3443db");
-            /*
-            fill: true,
-          backgroundColor: "rgba(179,181,198,0.2)",
-          borderColor: "rgba(179,181,198,1)",
-          pointBorderColor: "#fff",
-          pointBackgroundColor: "rgba(179,181,198,1)",
-             */
+
         }
 
         dataset.add(data);
@@ -380,9 +363,11 @@ public class ProductController implements RESTRoute {
 
         JsonArray labels = new JsonArray();
 
-        for (int i=-1; i< numberOfDays; i++) {
+        for (int i=0; i< numberOfDays; i++) {
             labels.add(formatLabels(i, fromTimeLong, diffBetweenLabels));
         }
+        labels.add(formatLabels(0, toTimeLong, 0L));
+
         return labels;
 
     }
