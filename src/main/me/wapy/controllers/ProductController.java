@@ -198,8 +198,54 @@ public class ProductController implements RESTRoute {
 
             graphsObject.add(ageRangeObject);
 
+            // ---------------------------------------------------------------//
+            //  age range screened with FEMALE gender bar chart
+            // ---------------------------------------------------------------//
+            // getting the female age range values
+            JsonArray ageRangeFemaleProduct = access.getAgeRangeFemaleValuesForProduct(owner_uid, object_id, fromTime, toTime);
 
+            // getting the attributes of the return and convert to right structures
+            JsonArray ageRangeFemaleChartLabels = getAgeRangeFemaleChartAttribute(ageRangeFemaleProduct, "group_id");
+            JsonArray ageRangeFemaleChartValues = getAgeRangeFemaleChartAttribute(ageRangeFemaleProduct, "age");
+            List<Long> ageRangeFemaleChartLongValues = getJsonArrayAsLongList(ageRangeFemaleChartValues);
 
+            // init the object
+            JsonObject ageRangeFemaleProductObject = getInitGraphObject("bar", "Female - Product views", false, "Female Views");
+
+            // getting the graph data into object
+            ageRangeFemaleProductObject = getGraphData(ageRangeFemaleProductObject, ageRangeFemaleChartLongValues, null, "Female", fromTime, toTime, numberOfDays);
+
+            // adding the labels we extracted from the return values
+            ageRangeFemaleProductObject.get("data").getAsJsonObject().add("labels", ageRangeFemaleChartLabels);
+
+            // adding options for the graph
+            ageRangeFemaleProductObject = getOptionsForGraph(ageRangeFemaleProductObject, "Female - Age Range", false);
+
+            graphsObject.add(ageRangeFemaleProductObject);
+
+            // ---------------------------------------------------------------//
+            //  age range screened with MALE gender bar chart
+            // ---------------------------------------------------------------//
+            JsonArray ageRangeMaleProduct = access.getAgeRangeMaleValuesForProduct(owner_uid, object_id, fromTime, toTime);
+
+            // getting the attributes of the return and convert to right structures
+            JsonArray ageRangeMaleChartLabels = getAgeRangeFemaleChartAttribute(ageRangeMaleProduct, "group_id");
+            JsonArray ageRangeMaleChartValues = getAgeRangeFemaleChartAttribute(ageRangeMaleProduct, "age");
+            List<Long> ageRangeMaleChartLongValues = getJsonArrayAsLongList(ageRangeMaleChartValues);
+
+            // init the object
+            JsonObject ageRangeMaleProductObject = getInitGraphObject("bar", "Male - Product views", false, "Male Views");
+
+            // getting the graph data into object
+            ageRangeMaleProductObject = getGraphData(ageRangeMaleProductObject, ageRangeMaleChartLongValues, null, "Male", fromTime, toTime, numberOfDays);
+
+            // adding the labels we extracted from the return values
+            ageRangeMaleProductObject.get("data").getAsJsonObject().add("labels", ageRangeMaleChartLabels);
+
+            // adding options for the graph
+            ageRangeMaleProductObject = getOptionsForGraph(ageRangeMaleProductObject, "Male - Age Range", false);
+
+            graphsObject.add(ageRangeMaleProductObject);
         }
 
         // construct the json to return
@@ -542,5 +588,22 @@ public class ProductController implements RESTRoute {
          */
         return jsonArray;
     }
+
+    private JsonArray getAgeRangeFemaleChartAttribute(JsonArray array, String member) {
+        JsonArray values = new JsonArray();
+        for (JsonElement element : array) {
+            values.add(element.getAsJsonObject().get(member));
+        }
+        return values;
+    }
+
+    private List<Long> getJsonArrayAsLongList(JsonArray array) {
+        List<Long> values = new ArrayList<>();
+        for (JsonElement element : array) {
+            values.add(element.getAsLong());
+        }
+        return values;
+    }
+
 
 }
