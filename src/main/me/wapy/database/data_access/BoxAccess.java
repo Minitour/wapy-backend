@@ -124,49 +124,4 @@ public class BoxAccess extends Database {
 
         return product;
     }
-
-    /**
-     * Return all reactions for specific product and box in a given time interval
-     * @param objectId
-     * @param owner_uid
-     * @param fromTime
-     * @param toTime
-     * @return
-     * @throws SQLException
-     */
-    public List<Reaction> getAllReactionsPerProductPerBox(String objectId, String owner_uid, Timestamp fromTime, Timestamp toTime) throws SQLException {
-        String[] emotions = {"calm", "happy", "confused", "disgusted", "angry", "sad"};
-        List<Reaction> allReactions = new ArrayList<>();
-
-        String query = "select count(object_id) as value, " + String.join(",", emotions) + " from images_table\n" +
-                "where timestamp between ? and ? AND ";
-
-        for (String emotion : emotions) {
-            query += emotion + " >= 50.0 AND ";
-        }
-
-        query += "object_id=? and owner_uid=?";
-
-        // getting the results for the query
-        List<Map<String, Object>> res = sql.get(
-                query,
-                fromTime, toTime, objectId, owner_uid
-        );
-
-        // checking for validation of result
-        if (res.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        if (debug) {
-            System.out.println(res);
-        }
-
-        for (String emotion : emotions) {
-            Reaction reaction = new Reaction(emotion, Long.valueOf(res.get(0).get(emotion).toString()));
-            allReactions.add(reaction);
-        }
-
-        return allReactions;
-    }
 }
