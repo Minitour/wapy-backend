@@ -98,7 +98,7 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             Long likes = access.getReactionsPerProduct(owner_uid, object_id, fromTime, toTime);
 
-            JsonObject likesObject = getProductAsJson("Likes", null, likes, "thumbs-up", "white", "white", 0L, true, "", false);
+            JsonObject likesObject = getProductAsJson("Likes", null, likes, "thumbs-up", "#e74c3c", "white", 0L, true, "", false);
 
             statsObject.add(likesObject);
 
@@ -108,7 +108,7 @@ public class ProductController implements RESTRoute {
 
             Long smiles = access.getSmilesForProduct(fromTime, toTime, object_id, owner_uid);
 
-            JsonObject smilesObject = getProductAsJson("Smiles", null, smiles, "smile", "white", "white", 0L, true, "", false);
+            JsonObject smilesObject = getProductAsJson("Smiles", null, smiles, "smile", "#e74c3c", "white", 0L, true, "", false);
 
             statsObject.add(smilesObject);
 
@@ -117,11 +117,11 @@ public class ProductController implements RESTRoute {
             // ---------------------------------------------------------------//
             List<Reaction> reactions = access.getProductReactionSummary(owner_uid, object_id, fromTime, toTime);
 
-            JsonObject reactionsObject = getInitGraphObject("radar", "Product - Reactions Map", false, "Reactions");
+            JsonObject reactionsObject = getInitGraphObject("radar", "Product - Reactions Map", true, "Reactions");
 
             reactionsObject = getGraphData(reactionsObject, null, reactions,"Reaction", fromTime, toTime, numberOfDays);
 
-            reactionsObject = getOptionsForGraph(reactionsObject, "Product Reactions", false);
+            reactionsObject = getOptionsForGraph(reactionsObject, "Product Reactions", true);
 
             graphsObject.add(reactionsObject);
 
@@ -130,7 +130,7 @@ public class ProductController implements RESTRoute {
             //  get views per time period
             // ---------------------------------------------------------------//
 
-            JsonObject views_over_time_object = getInitGraphObject("line", "Views Over Time", false, "Views");
+            JsonObject views_over_time_object = getInitGraphObject("line", "Views Over Time", true, "Views");
             JsonArray labels = generateLineChartLabels(fromTime, toTime, numberOfDays);
             List<Long> views_over_time = new ArrayList<>();
 
@@ -147,31 +147,15 @@ public class ProductController implements RESTRoute {
             views_over_time_object = getGraphData(views_over_time_object, views_over_time, null, "Views", fromTime, toTime, numberOfDays);
 
             // getting the option for the graph
-            views_over_time_object = getOptionsForGraph(views_over_time_object, "Views", false);
+            views_over_time_object = getOptionsForGraph(views_over_time_object, "Views", true);
 
             graphsObject.add(views_over_time_object);
 
             // ---------------------------------------------------------------//
             //  pie chart for gender
             // ---------------------------------------------------------------//
-            /*
-            data: {
-      labels: ["Africa", "Asia", "Europe", "Latin America", "North America"],
-      datasets: [{
-        label: "Population (millions)",
-        backgroundColor: ["#3e95cd", "#8e5ea2","#3cba9f","#e8c3b9","#c45850"],
-        data: [2478,5267,734,784,433]
-      }]
-    },
-    options: {
-      title: {
-        display: true,
-        text: 'Predicted world population (millions) in 2050'
-      }
-    }
-             */
 
-            JsonObject genderPieObject = getInitGraphObject("pie", "Gender", false, "Product - Gender Pie");
+            JsonObject genderPieObject = getInitGraphObject("pie", "Gender", true, "Product - Gender Pie");
 
             // getting the values for female and male looking at the product
             JsonObject pieData = access.getProductViewsPerGender(owner_uid, object_id, fromTime, toTime);
@@ -182,7 +166,7 @@ public class ProductController implements RESTRoute {
 
             genderPieObject = getGraphData(genderPieObject, productViews, null, "Gender", fromTime, toTime, numberOfDays);
 
-            genderPieObject = getOptionsForGraph(genderPieObject, "Product - Gender Pie", false);
+            genderPieObject = getOptionsForGraph(genderPieObject, "Product - Gender Pie", true);
 
             graphsObject.add(genderPieObject);
 
@@ -470,7 +454,9 @@ public class ProductController implements RESTRoute {
     private JsonArray generateRadarLabels(List<Reaction> reactionValues){
         JsonArray labels = new JsonArray();
         for (Reaction reactionValue : reactionValues) {
-            labels.add(reactionValue.getReaction());
+            String reaction = reactionValue.getReaction();
+            reaction = reaction.substring(0, 1).toUpperCase() + reaction.substring(1);
+            labels.add(reaction);
         }
         return labels;
     }
