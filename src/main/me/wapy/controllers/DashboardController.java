@@ -205,7 +205,6 @@ public class DashboardController implements RESTRoute {
             // add the graph to the json response
             graphsObject.add(exposureObject);
 
-
             // ---------------------------------------------------------------//
             // all products in window
             /*
